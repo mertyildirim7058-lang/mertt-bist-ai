@@ -8,11 +8,23 @@ import requests
 import plotly.graph_objects as go
 from bs4 import BeautifulSoup
 import concurrent.futures
+from PIL import Image # Logo işleme için gerekli
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="MERTT AI", layout="wide", page_icon="🛡️")
+# --- 1. LOGO YÜKLEME VE SAYFA AYARLARI ---
+# Logoyu önce yüklemeye çalışıyoruz, yoksa standart ikon kullanıyoruz
+try:
+    logo_img = Image.open("logo.png")
+    page_icon_img = logo_img
+except:
+    page_icon_img = "🛡️"
 
-# --- PWA MODU ---
+st.set_page_config(
+    page_title="MERTT AI", 
+    layout="wide", 
+    page_icon=page_icon_img # Sekmedeki küçük ikon artık senin logon!
+)
+
+# --- PWA MODU (MOBİL GÖRÜNÜM) ---
 def pwa_kodlari():
     pwa_html = """
     <meta name="theme-color" content="#0e1117">
@@ -28,12 +40,16 @@ def guvenlik_kontrolu():
     if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
     
     if not st.session_state['giris_yapildi']:
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            try: st.image("logo.png", use_column_width=True)
-            except: pass
-            st.markdown("<h3 style='text-align: center;'>Gelecek İçin Bilgi ve Teknoloji</h3>", unsafe_allow_html=True)
+            # Giriş Ekranında Büyük Logo
+            try: st.image("logo.png", use_container_width=True)
+            except: st.header("MERTT AI")
+            
+            st.markdown("<h4 style='text-align: center;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
+            st.divider()
+            
             sifre = st.text_input("Erişim Anahtarı:", type="password")
             if st.button("Sisteme Giriş Yap", type="primary", use_container_width=True):
                 try:
@@ -50,6 +66,11 @@ if not guvenlik_kontrolu(): st.stop()
 # --- ANALİZ MOTORU ---
 class TradingEngine:
     def __init__(self):
+        # Scikit-learn hatasını önlemek için import kontrolü
+        try:
+            from sklearn.preprocessing import StandardScaler
+        except:
+            pass
         self.model = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42)
     
     def get_live_price(self, ticker):
@@ -74,11 +95,10 @@ class TradingEngine:
         df = self.get_data(ticker)
         if df is None or len(df) < 30: return None
         
-        # Canlı Fiyatı Ekle
+        # Canlı fiyat güncelleme
         live_price = self.get_live_price(ticker)
         if live_price: df.iloc[-1, df.columns.get_loc('Close')] = live_price
         
-        # İndikatörler
         df['RSI'] = ta.rsi(df['Close'], length=14)
         df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
         df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
@@ -92,7 +112,7 @@ class TradingEngine:
         
         last = df.iloc[-1]
         
-        # Sinyal ve Hedefler
+        # Karar Mekanizması
         signal = "NÖTR / İZLE"
         color = "gray"
         stop_loss = last['Close'] - (last['ATR'] * 1.5)
@@ -102,29 +122,34 @@ class TradingEngine:
             signal = "GÜÇLÜ AL 🚀"
             color = "green"
         elif prob < 40 and last['Close'] < last['VWAP']:
-            signal = "SAT / DÜŞÜŞ BEKLENTİSİ 🔻"
+            signal = "SAT / DÜŞÜŞ 🔻"
             color = "red"
             
         return {
             "Hisse": ticker.replace('.IS',''), 
             "Fiyat": last['Close'], 
             "Skor": prob, 
-            "RSI": last['RSI'],
+            "RSI": last['RSI'], 
             "Sinyal": signal,
             "Renk": color,
             "Stop": stop_loss,
             "Hedef": target_price,
-            "Data": df # Grafiği çizmek için veriyi de döndürüyoruz
+            "Data": df
         }
 
 # --- ARAYÜZ ---
 def main():
+    # Yan Menü (Sidebar) Tasarımı
     with st.sidebar:
-        try: st.image("logo.png")
-        except: pass
-        st.markdown("<h3 style='text-align: center;'>MERTT AI</h3>", unsafe_allow_html=True)
-        # MENÜYÜ GÜNCELLEDİK
-        menu = st.radio("Menü", ["💬 Hisse Sor / Analiz", "📡 Piyasa Radarı", "Çıkış"])
+        try:
+            # Yan menüde logo gösterimi
+            st.image("logo.png", use_container_width=True)
+        except:
+            st.header("MERTT")
+            
+        st.markdown("<h3 style='text-align: center;'>Yapay Zeka Üssü</h3>", unsafe_allow_html=True)
+        st.divider()
+        menu = st.radio("Kontrol Paneli", ["💬 Hisse Sor / Analiz", "📡 Piyasa Radarı", "Çıkış"])
         
         if menu == "Çıkış":
             st.session_state['giris_yapildi'] = False
@@ -132,79 +157,88 @@ def main():
 
     engine = TradingEngine()
 
-    # --- YENİ BÖLÜM: HİSSE SORMA KISMI ---
+    # --- 1. MODÜL: HİSSE SORMA ---
     if menu == "💬 Hisse Sor / Analiz":
-        st.title("🤖 Yapay Zeka Asistanı")
-        st.markdown("Merak ettiğin hisseyi yaz, yapay zeka senin için röntgenini çeksin.")
+        st.title("💬 Hisse Analiz Asistanı")
+        st.markdown("Yapay zekaya analiz ettirmek istediğin hisseyi yaz.")
         
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            symbol = st.text_input("Hisse Kodu (Örn: THYAO, SASA):", "").upper()
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True) # Hizalama boşluğu
-            analyze_btn = st.button("Analiz Et 🔍", type="primary")
+        c1, c2 = st.columns([3,1])
+        with c1:
+            symbol = st.text_input("Hisse Kodu (Örn: THYAO):", "").upper()
+        with c2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn = st.button("Analiz Et 🔍", type="primary")
 
-        if analyze_btn and symbol:
-            with st.spinner(f"{symbol} analiz ediliyor..."):
+        if btn and symbol:
+            with st.spinner(f"{symbol} taranıyor..."):
                 res = engine.analyze(symbol)
-                
                 if res:
-                    # 1. ÖZET KARTLARI
-                    k1, k2, k3, k4 = st.columns(4)
-                    k1.metric("Canlı Fiyat", f"{res['Fiyat']:.2f} TL")
-                    k2.metric("AI Güven Skoru", f"%{res['Skor']:.1f}")
-                    k3.metric("RSI (Güç)", f"{res['RSI']:.0f}")
-                    k4.metric("Risk Seviyesi", "DÜŞÜK" if res['RSI'] < 30 else "YÜKSEK" if res['RSI'] > 70 else "NORMAL")
+                    # Özet Kartları
+                    m1, m2, m3 = st.columns(3)
+                    m1.metric("Fiyat", f"{res['Fiyat']:.2f} TL")
+                    m2.metric("AI Güveni", f"%{res['Skor']:.1f}")
+                    m3.metric("RSI", f"{res['RSI']:.0f}")
                     
                     st.divider()
                     
-                    # 2. KARAR VE HEDEFLER
-                    if res['Renk'] == "green":
+                    # Sinyal Kutusu
+                    if res['Renk'] == 'green':
                         st.success(f"### 📢 KARAR: {res['Sinyal']}")
                         c1, c2 = st.columns(2)
-                        c1.info(f"🛑 **Stop-Loss (Zarar Kes):** {res['Stop']:.2f} TL")
-                        c2.success(f"🎯 **Hedef (Kar Al):** {res['Hedef']:.2f} TL")
-                    elif res['Renk'] == "red":
+                        c1.info(f"🛡️ **Stop-Loss:** {res['Stop']:.2f} TL")
+                        c2.success(f"🎯 **Hedef:** {res['Hedef']:.2f} TL")
+                    elif res['Renk'] == 'red':
                         st.error(f"### 📢 KARAR: {res['Sinyal']}")
-                        st.warning("Trend aşağı yönlü. Alım için acele etme.")
+                        st.warning("Düşüş trendi hakim. Alım önerilmez.")
                     else:
                         st.warning(f"### 📢 KARAR: {res['Sinyal']}")
-                        st.info("Piyasa kararsız. Net bir fırsat görünmüyor.")
-
-                    # 3. GRAFİK
-                    st.subheader("📊 Teknik Görünüm")
-                    df = res['Data']
+                        st.info("Yön belirsiz. Beklemede kalmak en iyisi.")
+                        
+                    # Grafik
+                    st.subheader("📊 Grafik Analizi")
                     fig = go.Figure()
-                    fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name='Fiyat'))
-                    fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange', width=2), name='VWAP'))
-                    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=0, r=0, t=30, b=0))
+                    fig.add_trace(go.Candlestick(x=res['Data'].index, 
+                                               open=res['Data']['Open'], high=res['Data']['High'],
+                                               low=res['Data']['Low'], close=res['Data']['Close'], name="Fiyat"))
+                    fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data']['VWAP'], line=dict(color='orange'), name="VWAP"))
+                    fig.update_layout(template="plotly_dark", height=400)
                     st.plotly_chart(fig, use_container_width=True)
-                    
                 else:
-                    st.error("Veri alınamadı veya hisse kodu hatalı.")
+                    st.error("Hisse bulunamadı veya verisi yetersiz.")
 
-    # --- ESKİ BÖLÜM: RADAR ---
+    # --- 2. MODÜL: OTOMATİK TARAMA (RADAR) ---
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
-        st.info("BIST 30 Hisseleri taranıyor...")
+        st.info("Bu ekran, seçili hisseleri anlık tarayıp fırsat olanları listeler. (Ayrıca Telegram botu arka planda otomatik çalışmaya devam eder).")
+        
         if st.button("TARAMAYI BAŞLAT 🚀"):
-            hisseler = ["THYAO", "ASELS", "KCHOL", "GARAN", "AKBNK", "SASA", "SISE", "EREGL", "TUPRS", "BIMAS"]
+            hisseler = ["THYAO", "ASELS", "KCHOL", "GARAN", "AKBNK", "SASA", "SISE", "EREGL", "TUPRS", "BIMAS", "HEKTS", "PETKM"]
             results = []
             bar = st.progress(0)
+            
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = {executor.submit(engine.analyze, t): t for t in hisseler}
                 completed = 0
                 for future in concurrent.futures.as_completed(futures):
                     r = future.result()
-                    # Sadece verisi olanları listeye ekle
-                    if r: results.append({"Hisse": r['Hisse'], "Fiyat": r['Fiyat'], "Skor": r['Skor'], "Sinyal": r['Sinyal']})
+                    if r: results.append(r)
                     completed += 1
                     bar.progress(completed/len(hisseler))
+            
             bar.empty()
+            
             if results:
-                st.dataframe(pd.DataFrame(results).style.background_gradient(subset=['Skor'], cmap='Greens'))
-            else: st.info("Fırsat yok.")
+                # Sadece fırsat olanları veya nötr olanları gösterelim
+                df = pd.DataFrame(results)
+                # DataFrame'i güzelleştirme
+                st.dataframe(
+                    df[['Hisse', 'Fiyat', 'Sinyal', 'Skor', 'RSI']]
+                    .style.background_gradient(subset=['Skor'], cmap='Greens'),
+                    use_container_width=True
+                )
+            else:
+                st.warning("Şu an kriterlere uyan fırsat bulunamadı.")
 
 if __name__ == "__main__":
     main()
-            
+    
