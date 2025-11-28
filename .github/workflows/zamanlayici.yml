@@ -1,0 +1,25 @@
+name: MERTT Bot Tetikleyici
+
+on:
+  schedule:
+    # Hafta içi, Türkiye saatiyle 10:30 - 18:30 arası her saat başı
+    - cron: '30 7-15 * * 1-5'
+  workflow_dispatch: # GitHub sitesinden elle "Run" diyebilmek için
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Kütüphaneleri Yükle
+        run: pip install yfinance pandas pandas_ta requests
+      - name: Botu Başlat
+        env:
+          # GitHub Secrets'taki şifreleri koda aktarıyoruz
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python otomatik_bot.py
