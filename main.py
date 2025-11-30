@@ -1,116 +1,15 @@
-import streamlit as st
-import streamlit.components.v1 as components
-import yfinance as yf
-import pandas as pd
-import pandas_ta as ta
-import xgboost as xgb
-import numpy as np
-import plotly.graph_objects as go
-import requests
-from bs4 import BeautifulSoup
-import time
-from PIL import Image
-
-# --- 1. AYARLAR ---
-LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main/logo.png"
-
-st.set_page_config(
-    page_title="MERTT AI", 
-    layout="wide", 
-    page_icon="🛡️"  
-)
-
-def logo_goster():
-    """Logoyu güvenli şekilde gösterir"""
-    try: st.image("logo.png", use_container_width=True)
-    except:
-        try: st.image(LOGO_INTERNET_LINKI, use_container_width=True)
-        except: st.header("🦅 MERTT AI")
-
-def pwa_kodlari():
-    pwa_html = f"""
-    <meta name="theme-color" content="#0e1117">
-    <link rel="apple-touch-icon" href="{LOGO_INTERNET_LINKI}">
-    <link rel="icon" type="image/png" href="{LOGO_INTERNET_LINKI}">
-    """
-    components.html(f"<html><head>{pwa_html}</head></html>", height=0, width=0)
-pwa_kodlari()
-
-# --- GÜVENLİK DUVARI ---
-def guvenlik_kontrolu():
-    if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
-    
-    if not st.session_state['giris_yapildi']:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            logo_goster()
-            st.markdown("<h4 style='text-align: center;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
-            st.divider()
-            sifre = st.text_input("Erişim Anahtarı:", type="password")
-            if st.button("Sisteme Giriş Yap", type="primary", use_container_width=True):
-                try:
-                    if sifre == st.secrets["GIRIS_SIFRESI"]: 
-                        st.session_state['giris_yapildi'] = True
-                        st.rerun()
-                    else: st.error("⛔ Yetkisiz Erişim!")
-                except: st.error("Sistem Hatası: Şifre tanımlı değil.")
-        return False
-    return True
-
-if not guvenlik_kontrolu(): st.stop()
-
-# --- CANLI LİSTE MOTORU ---
-@st.cache_data(ttl=600)
-def get_live_tickers():
-    canli_liste = []
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            table = soup.find('table', {'id': 'tableHisseOnerileri'})
-            if table:
-                rows = table.find('tbody').find_all('tr')
-                for row in rows:
-                    cols = row.find_all('td')
-                    if cols:
-                        code = cols[0].find('a').text.strip()
-                        canli_liste.append(code)
-    except: pass
-    return sorted(list(set(canli_liste)))
-
-# --- TEK HİSSE ANALİZİ ---
-def analyze_single(ticker):
-    try:
-        t = f"{ticker}.IS"
-        df = yf.download(t, period="3mo", interval="60m", progress=False)
-        
-        if df is None or len(df) < 50: return None
-        if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
-        
-        df = df.ffill().bfill()
-        
-        df['RSI'] = ta.rsi(df['Close'], length=14)
-        df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
-        df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
-        
-        last = df.iloc[-1]
-        if pd.isna(last['RSI']): return None
-        
-        signal = "NÖTR"
-        color = "gray"
-        skor = 50
-        
-        # Dinamik Skorlama
-        if last['RSI'] < 45 and last['Close'] > last['VWAP']: 
-            signal = "GÜÇLÜ AL"
-            color = "green"
-            # RSI 30'a yaklaştıkça skor artar (Max 95)
-            skor = min(95, 50 + (50 - last['RSI']) * 1.5)
-            
+streamlit
+yfinance
+pandas
+pandas_ta
+xgboost
+requests
+beautifulsoup4
+plotly
+lxml
+openpyxl
+scikit-learn
+matplotlib
         elif last['RSI'] > 70:
             signal = "SAT"
             color = "red"
