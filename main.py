@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import requests
 from bs4 import BeautifulSoup
 import time
+import random
 from PIL import Image
 
 # --- 1. AYARLAR ---
@@ -59,29 +60,30 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- SADECE CANLI LİSTE (YEDEK YOK) ---
-@st.cache_data(ttl=300) # 5 dakikada bir yenile
+# --- HAYALET MODÜLÜ (USER-AGENT) ---
+def get_stealth_headers():
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15'
+    ]
+    return {'User-Agent': random.choice(user_agents), 'Referer': 'https://www.google.com/'}
+
+# --- CANLI LİSTE MOTORU ---
+@st.cache_data(ttl=600)
 def get_live_tickers():
-    """
-    Sadece canlı veriyi çekmeye çalışır.
-    Başarısız olursa BOŞ liste döner. Yedek yoktur.
-    """
     canli_liste = []
     url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
     
     try:
-        # Yöntem 1: Pandas ile Tablo Okuma (En Kapsamlısı)
-        tables = pd.read_html(url)
+        response = requests.get(url, headers=get_stealth_headers(), timeout=10)
+        tables = pd.read_html(response.text)
         df = tables[0]
-        # İlk sütun hisse kodlarıdır
         raw_list = df.iloc[:, 0].tolist()
         canli_liste = [str(x).strip() for x in raw_list if str(x).isalnum()]
-        
-    except Exception as e:
-        # Yöntem 2: Pandas çalışmazsa Requests ile dene
+    except:
+        # Manuel parsing yedeği
         try:
-            headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=get_stealth_headers(), timeout=10)
             soup = BeautifulSoup(response.content, 'html.parser')
             table = soup.find('table', {'id': 'tableHisseOnerileri'})
             if table:
@@ -91,55 +93,116 @@ def get_live_tickers():
                     if cols: canli_liste.append(cols[0].find('a').text.strip())
         except: pass
 
-    # Sonuç Dön
+    time.sleep(random.uniform(0.5, 1.5))
     return sorted(list(set(canli_liste)))
 
-# --- TEK HİSSE ANALİZİ ---
+# --- TEK HİSSE DETAYLI ANALİZ ---
 def analyze_single(ticker):
     try:
         t = f"{ticker}.IS"
-        df = yf.download(t, period="3mo", interval="60m", progress=False)
+        # 6 Aylık veri çekiyoruz (MACD ve Bollinger için daha sağlıklı)
+        df = yf.download(t, period="6mo", interval="60m", progress=False)
         
-        if df is None or len(df) < 50: return None
+        if df is None or len(df) < 100: return None
         if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
         
         df = df.ffill().bfill()
         
+        # --- İNDİKATÖRLER (AĞIR SİLAHLAR) ---
+        # 1. RSI
         df['RSI'] = ta.rsi(df['Close'], length=14)
+        
+        # 2. MACD (Trend)
+        macd = ta.macd(df['Close'])
+        df = pd.concat([df, macd], axis=1) # MACD_12_26_9, MACDh_12_26_9, MACDs_12_26_9
+        
+        # 3. Bollinger Bantları (Volatilite)
+        bb = ta.bbands(df['Close'], length=20)
+        df = pd.concat([df, bb], axis=1) # BBL_5_2.0 (Alt), BBU_5_2.0 (Üst)
+        
+        # 4. Stochastic RSI (Hassas)
+        stoch = ta.stoch(df['High'], df['Low'], df['Close'])
+        df = pd.concat([df, stoch], axis=1) # STOCHk_14_3_3, STOCHd_14_3_3
+        
+        # 5. VWAP & ATR
         df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
         df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
         
         last = df.iloc[-1]
+        prev = df.iloc[-2]
+        
         if pd.isna(last['RSI']): return None
         
+        # --- PUANLAMA MANTIĞI (0-100) ---
+        puan = 50 # Nötr başlangıç
+        sebepler = []
+        
+        # 1. RSI Analizi (Max 20 Puan)
+        if last['RSI'] < 30: 
+            puan += 20
+            sebepler.append("RSI Aşırı Satımda (Ucuz)")
+        elif last['RSI'] < 45: 
+            puan += 10
+        elif last['RSI'] > 70: 
+            puan -= 20
+            sebepler.append("RSI Aşırı Alımda (Pahalı)")
+            
+        # 2. MACD Analizi (Max 30 Puan) - Altın Vuruş
+        # MACD Çizgisi > Sinyal Çizgisi (AL)
+        macd_col = 'MACD_12_26_9'
+        macds_col = 'MACDs_12_26_9'
+        if last[macd_col] > last[macds_col]:
+            puan += 20
+            sebepler.append("MACD Al Sinyali (Trend Yukarı)")
+            # Yeni kesişimse ekstra puan
+            if prev[macd_col] < prev[macds_col]:
+                puan += 10
+                sebepler.append("MACD Yeni Kesişim! (Güçlü)")
+        else:
+            puan -= 20
+            
+        # 3. Bollinger Analizi (Max 20 Puan)
+        lower_band = 'BBL_20_2.0'
+        upper_band = 'BBU_20_2.0'
+        if last['Close'] <= last[lower_band] * 1.02: # Alt banda yakınsa
+            puan += 20
+            sebepler.append("Bollinger Alt Bandında (Tepki Bekleniyor)")
+        elif last['Close'] >= last[upper_band]:
+            puan -= 20
+            
+        # 4. VWAP Analizi (Max 10 Puan)
+        if last['Close'] > last['VWAP']:
+            puan += 10
+        
+        # Sınırla
+        puan = max(0, min(100, puan))
+        
+        # Sinyal Kararı
         signal = "NÖTR"
         color = "gray"
-        skor = 50
-        
-        if last['RSI'] < 45 and last['Close'] > last['VWAP']: 
-            signal = "GÜÇLÜ AL"
-            color = "green"
-            skor = min(95, 50 + (50 - last['RSI']) * 1.5)
-        elif last['RSI'] > 70:
-            signal = "SAT"
-            color = "red"
-            skor = min(90, (last['RSI'] - 50) * 2)
+        if puan >= 80: signal, color = "GÜÇLÜ AL 🚀", "green"
+        elif puan >= 60: signal, color = "AL 🌱", "blue"
+        elif puan <= 30: signal, color = "SAT 🔻", "red"
             
         return {
             "Fiyat": last['Close'], "RSI": last['RSI'], 
-            "Sinyal": signal, "Renk": color, "Skor": int(skor),
+            "Sinyal": signal, "Renk": color, "Skor": puan,
+            "Sebepler": sebepler,
             "Stop": last['Close'] - last['ATR']*1.5,
             "Hedef": last['Close'] + last['ATR']*3,
             "Data": df
         }
-    except: return None
+    except Exception as e: 
+        return None
 
-# --- TOPLU ANALİZ (Batch) ---
+# --- TOPLU ANALİZ (HIZLANDIRILMIŞ) ---
 def analyze_batch(tickers_list):
     results = []
     symbols = [f"{t}.IS" for t in tickers_list]
+    time.sleep(random.uniform(1.0, 2.0))
     
     try:
+        # Sadece 3 aylık veri çek (Hız için, detayda 6 ay çekeriz)
         data = yf.download(symbols, period="3mo", interval="60m", group_by='ticker', progress=False, threads=True)
         
         for ticker in tickers_list:
@@ -151,37 +214,47 @@ def analyze_batch(tickers_list):
                 df = df.dropna()
                 if len(df) < 50: continue 
                 
+                # Hızlı İndikatörler
                 rsi = ta.rsi(df['Close'], length=14)
+                # MACD
+                macd = ta.macd(df['Close'])
+                df = pd.concat([df, macd], axis=1)
+                
+                last = df.iloc[-1]
+                prev = df.iloc[-2]
+                
+                if last['Close'] <= 0 or pd.isna(last['RSI']): continue
+                
+                # --- HIZLI SKORLAMA ---
+                puan = 50
+                # RSI
+                if last['RSI'] < 30: puan += 25
+                elif last['RSI'] < 45: puan += 10
+                elif last['RSI'] > 70: puan -= 25
+                
+                # MACD (Kolon adları kütüphaneye göre standarttır)
+                if last['MACD_12_26_9'] > last['MACDs_12_26_9']: puan += 25
+                else: puan -= 15
+                
+                # VWAP (Manuel hesapla)
                 vwap = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
+                if last['Close'] > vwap.iloc[-1]: puan += 10
                 
-                last_close = df['Close'].iloc[-1]
-                last_rsi = rsi.iloc[-1]
-                last_vwap = vwap.iloc[-1]
-                
-                if last_close <= 0 or pd.isna(last_rsi): continue
+                puan = max(0, min(100, puan))
                 
                 signal = "NÖTR"
-                skor = 50 
+                if puan >= 75: signal = "GÜÇLÜ AL"
+                elif puan >= 60: signal = "AL"
+                elif puan <= 30: signal = "SAT"
                 
-                if last_rsi < 45 and last_close > last_vwap:
-                    signal = "GÜÇLÜ AL"
-                    skor = 50 + ((50 - last_rsi) * 2)
-                    if skor > 99: skor = 99
-                elif last_rsi > 75:
-                    signal = "SAT"
-                    skor = (last_rsi - 50) * 2
-                    if skor > 95: skor = 95
-                elif last_close < last_vwap and last_rsi < 50:
-                    signal = "DÜŞÜŞ TRENDİ"
-                    skor = 30
-                
-                if "AL" in signal or "SAT" in signal or "DÜŞÜŞ" in signal:
+                # Sadece AL/SAT olanları kaydet
+                if signal != "NÖTR":
                     results.append({
                         "Hisse": ticker,
-                        "Fiyat": last_close,
+                        "Fiyat": last['Close'],
                         "Sinyal": signal,
-                        "RSI": last_rsi,
-                        "Skor": int(skor)
+                        "RSI": last['RSI'],
+                        "Skor": int(puan)
                     })
             except: continue
     except: pass
@@ -193,16 +266,17 @@ def main():
         logo_goster()
         st.markdown("<h3 style='text-align: center;'>Yapay Zeka Üssü</h3>", unsafe_allow_html=True)
         st.divider()
-        menu = st.radio("Panel", ["💬 Hisse Sor", "📡 Piyasa Radarı (Batch)", "Çıkış"])
+        menu = st.radio("Panel", ["💬 Detaylı Hisse Analizi", "📡 Piyasa Radarı (Batch)", "Çıkış"])
         if menu == "Çıkış":
             st.session_state['giris_yapildi'] = False
             st.rerun()
 
-    # CANLI LİSTE ÇEK
     tum_hisseler = get_live_tickers()
 
-    if menu == "💬 Hisse Sor":
-        st.title("🤖 Hisse Analiz Asistanı")
+    if menu == "💬 Detaylı Hisse Analizi":
+        st.title("🤖 Hisse Röntgeni")
+        st.info("RSI, MACD, Bollinger ve VWAP analizi yapar.")
+        
         c1, c2 = st.columns([3,1])
         with c1: sembol = st.text_input("Hisse Kodu (Örn: THYAO):", "").upper()
         with c2: 
@@ -210,29 +284,52 @@ def main():
             btn = st.button("Analiz Et", type="primary")
 
         if btn and sembol:
-            with st.spinner("Analiz ediliyor..."):
+            with st.spinner("Büyük Veri Analiz Ediliyor..."):
                 res = analyze_single(sembol)
                 if res:
+                    # 1. Ana Metrikler
                     k1, k2, k3 = st.columns(3)
                     k1.metric("Fiyat", f"{res['Fiyat']:.2f} TL")
-                    k2.metric("Sinyal", res['Sinyal'], delta=f"Güven: %{res['Skor']}")
+                    k2.metric("AI Kararı", res['Sinyal'], delta=f"Puan: {res['Skor']}/100")
                     k3.metric("RSI", f"{res['RSI']:.0f}")
+                    
+                    st.divider()
+                    
+                    # 2. Yapay Zeka Yorumları (Neden bu puanı verdi?)
+                    if res['Sebepler']:
+                        st.subheader("💡 Yapay Zeka Tespitleri")
+                        for sebep in res['Sebepler']:
+                            st.success(f"✅ {sebep}")
+                    
+                    # 3. Hedefler
+                    if res['Renk'] in ['green', 'blue']:
+                        c1, c2 = st.columns(2)
+                        c1.info(f"🛡️ **Zarar Kes (Stop):** {res['Stop']:.2f} TL")
+                        c2.success(f"🎯 **Hedef (Take Profit):** {res['Hedef']:.2f} TL")
+                    
+                    # 4. Grafik
+                    st.subheader("📊 Teknik Grafik")
                     fig = go.Figure()
-                    fig.add_trace(go.Candlestick(x=res['Data'].index, open=res['Data']['Open'], high=res['Data']['High'], low=res['Data']['Low'], close=res['Data']['Close']))
-                    fig.update_layout(template="plotly_dark", height=350)
+                    # Mumlar
+                    fig.add_trace(go.Candlestick(x=res['Data'].index, open=res['Data']['Open'], high=res['Data']['High'], low=res['Data']['Low'], close=res['Data']['Close'], name="Fiyat"))
+                    # Bollinger
+                    fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data']['BBU_20_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Bollinger Üst'))
+                    fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data']['BBL_20_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Bollinger Alt'))
+                    # VWAP
+                    fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data']['VWAP'], line=dict(color='orange', width=2), name='VWAP'))
+                    
+                    fig.update_layout(template="plotly_dark", height=450, xaxis_rangeslider_visible=False)
                     st.plotly_chart(fig, use_container_width=True)
                 else: st.error("Veri bulunamadı.")
 
     elif menu == "📡 Piyasa Radarı (Batch)":
         st.title("📡 MERTT Piyasa Radarı")
         
-        # Eğer liste boşsa HATA VER ve DUR
         if not tum_hisseler:
-            st.error("⚠️ KRİTİK HATA: Canlı Borsa Listesine Ulaşılamıyor!")
-            st.warning("İş Yatırım sitesi cevap vermiyor. Eski verilerle işlem yapmamak için sistem durduruldu.")
+            st.error("⚠️ Liste çekilemedi. Lütfen sayfayı yenileyin.")
             st.stop()
             
-        st.info(f"Canlı Takipteki Hisse Sayısı: {len(tum_hisseler)}")
+        st.info(f"Takipteki Hisse Sayısı: {len(tum_hisseler)}")
         
         if st.button("TÜM BORSAYI TARA (Turbo Mod) 🚀", type="primary"):
             all_results = []
@@ -254,26 +351,25 @@ def main():
             
             if all_results:
                 df = pd.DataFrame(all_results)
-                try:
-                    st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
-                    st.dataframe(
-                        df,
-                        column_config={
-                            "Hisse": st.column_config.TextColumn("Hisse Kodu"),
-                            "Fiyat": st.column_config.NumberColumn("Fiyat", format="%.2f TL"),
-                            "Sinyal": st.column_config.TextColumn("AI Kararı"),
-                            "RSI": st.column_config.NumberColumn("RSI Gücü", format="%.0f"),
-                            "Skor": st.column_config.ProgressColumn(
-                                "Güven Skoru",
-                                format="%d",
-                                min_value=0,
-                                max_value=100,
-                            ),
-                        },
-                        hide_index=True,
-                        use_container_width=True
-                    )
-                except: st.dataframe(df)
+                st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
+                
+                st.dataframe(
+                    df,
+                    column_config={
+                        "Hisse": st.column_config.TextColumn("Hisse Kodu"),
+                        "Fiyat": st.column_config.NumberColumn("Fiyat", format="%.2f TL"),
+                        "Sinyal": st.column_config.TextColumn("AI Kararı"),
+                        "RSI": st.column_config.NumberColumn("RSI Gücü", format="%.0f"),
+                        "Skor": st.column_config.ProgressColumn(
+                            "Güven Skoru",
+                            format="%d",
+                            min_value=0,
+                            max_value=100,
+                        ),
+                    },
+                    hide_index=True,
+                    use_container_width=True
+                )
             else:
                 st.warning("Hiçbir sinyal bulunamadı.")
 
