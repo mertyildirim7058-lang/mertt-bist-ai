@@ -59,29 +59,42 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- CANLI LİSTE MOTORU ---
-@st.cache_data(ttl=600)
+# --- SADECE CANLI LİSTE (YEDEK YOK) ---
+@st.cache_data(ttl=300) # 5 dakikada bir yenile
 def get_live_tickers():
+    """
+    Sadece canlı veriyi çekmeye çalışır.
+    Başarısız olursa BOŞ liste döner. Yedek yoktur.
+    """
     canli_liste = []
+    url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
+    
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
-        response = requests.get(url, headers=headers, timeout=10)
+        # Yöntem 1: Pandas ile Tablo Okuma (En Kapsamlısı)
+        tables = pd.read_html(url)
+        df = tables[0]
+        # İlk sütun hisse kodlarıdır
+        raw_list = df.iloc[:, 0].tolist()
+        canli_liste = [str(x).strip() for x in raw_list if str(x).isalnum()]
         
-        if response.status_code == 200:
+    except Exception as e:
+        # Yöntem 2: Pandas çalışmazsa Requests ile dene
+        try:
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.content, 'html.parser')
             table = soup.find('table', {'id': 'tableHisseOnerileri'})
             if table:
                 rows = table.find('tbody').find_all('tr')
                 for row in rows:
                     cols = row.find_all('td')
-                    if cols:
-                        code = cols[0].find('a').text.strip()
-                        canli_liste.append(code)
-    except: pass
+                    if cols: canli_liste.append(cols[0].find('a').text.strip())
+        except: pass
+
+    # Sonuç Dön
     return sorted(list(set(canli_liste)))
 
-# --- TEK HİSSE ANALİZİ (Düzeltildi) ---
+# --- TEK HİSSE ANALİZİ ---
 def analyze_single(ticker):
     try:
         t = f"{ticker}.IS"
@@ -103,12 +116,10 @@ def analyze_single(ticker):
         color = "gray"
         skor = 50
         
-        # Dinamik Skorlama (Hizalama Düzeltildi)
         if last['RSI'] < 45 and last['Close'] > last['VWAP']: 
             signal = "GÜÇLÜ AL"
             color = "green"
             skor = min(95, 50 + (50 - last['RSI']) * 1.5)
-            
         elif last['RSI'] > 70:
             signal = "SAT"
             color = "red"
@@ -152,22 +163,18 @@ def analyze_batch(tickers_list):
                 signal = "NÖTR"
                 skor = 50 
                 
-                # --- DİNAMİK SKOR ---
                 if last_rsi < 45 and last_close > last_vwap:
                     signal = "GÜÇLÜ AL"
                     skor = 50 + ((50 - last_rsi) * 2)
                     if skor > 99: skor = 99
-                    
                 elif last_rsi > 75:
                     signal = "SAT"
                     skor = (last_rsi - 50) * 2
                     if skor > 95: skor = 95
-                    
                 elif last_close < last_vwap and last_rsi < 50:
                     signal = "DÜŞÜŞ TRENDİ"
                     skor = 30
                 
-                # Sadece önemli sinyalleri al
                 if "AL" in signal or "SAT" in signal or "DÜŞÜŞ" in signal:
                     results.append({
                         "Hisse": ticker,
@@ -191,6 +198,7 @@ def main():
             st.session_state['giris_yapildi'] = False
             st.rerun()
 
+    # CANLI LİSTE ÇEK
     tum_hisseler = get_live_tickers()
 
     if menu == "💬 Hisse Sor":
@@ -209,7 +217,6 @@ def main():
                     k1.metric("Fiyat", f"{res['Fiyat']:.2f} TL")
                     k2.metric("Sinyal", res['Sinyal'], delta=f"Güven: %{res['Skor']}")
                     k3.metric("RSI", f"{res['RSI']:.0f}")
-                    
                     fig = go.Figure()
                     fig.add_trace(go.Candlestick(x=res['Data'].index, open=res['Data']['Open'], high=res['Data']['High'], low=res['Data']['Low'], close=res['Data']['Close']))
                     fig.update_layout(template="plotly_dark", height=350)
@@ -219,8 +226,10 @@ def main():
     elif menu == "📡 Piyasa Radarı (Batch)":
         st.title("📡 MERTT Piyasa Radarı")
         
+        # Eğer liste boşsa HATA VER ve DUR
         if not tum_hisseler:
-            st.error("⚠️ HATA: Canlı borsa listesine ulaşılamıyor!")
+            st.error("⚠️ KRİTİK HATA: Canlı Borsa Listesine Ulaşılamıyor!")
+            st.warning("İş Yatırım sitesi cevap vermiyor. Eski verilerle işlem yapmamak için sistem durduruldu.")
             st.stop()
             
         st.info(f"Canlı Takipteki Hisse Sayısı: {len(tum_hisseler)}")
@@ -245,29 +254,29 @@ def main():
             
             if all_results:
                 df = pd.DataFrame(all_results)
-                
-                st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
-                
-                st.dataframe(
-                    df,
-                    column_config={
-                        "Hisse": st.column_config.TextColumn("Hisse Kodu"),
-                        "Fiyat": st.column_config.NumberColumn("Fiyat", format="%.2f TL"),
-                        "Sinyal": st.column_config.TextColumn("AI Kararı"),
-                        "RSI": st.column_config.NumberColumn("RSI Gücü", format="%.0f"),
-                        "Skor": st.column_config.ProgressColumn(
-                            "Güven Skoru",
-                            format="%d",
-                            min_value=0,
-                            max_value=100,
-                        ),
-                    },
-                    hide_index=True,
-                    use_container_width=True
-                )
+                try:
+                    st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
+                    st.dataframe(
+                        df,
+                        column_config={
+                            "Hisse": st.column_config.TextColumn("Hisse Kodu"),
+                            "Fiyat": st.column_config.NumberColumn("Fiyat", format="%.2f TL"),
+                            "Sinyal": st.column_config.TextColumn("AI Kararı"),
+                            "RSI": st.column_config.NumberColumn("RSI Gücü", format="%.0f"),
+                            "Skor": st.column_config.ProgressColumn(
+                                "Güven Skoru",
+                                format="%d",
+                                min_value=0,
+                                max_value=100,
+                            ),
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                except: st.dataframe(df)
             else:
                 st.warning("Hiçbir sinyal bulunamadı.")
 
 if __name__ == "__main__":
     main()
-        
+    
