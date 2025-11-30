@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import concurrent.futures
 import random
 import time
+import numpy as np
 
 # --- 1. AYARLAR ---
 LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main/logo.png"
@@ -38,7 +39,6 @@ pwa_kodlari()
 # --- GÜVENLİK DUVARI ---
 def guvenlik_kontrolu():
     if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
-    
     if not st.session_state['giris_yapildi']:
         st.markdown("<br><br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,2,1])
@@ -59,70 +59,10 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- HİSSE LİSTESİ ALTYAPISI (BÜYÜK LİSTE) ---
-def get_backup_list():
-    """Siteye ulaşılamazsa kullanılacak EN GENİŞ LİSTE (600+ Hisse)"""
-    return [
-        "A1CAP", "ACSEL", "ADEL", "ADESE", "ADGYO", "AEFES", "AFYON", "AGESA", "AGHOL", "AGROT", "AGYO",
-        "AHGAZ", "AKBNK", "AKCNS", "AKENR", "AKFGY", "AKFYE", "AKGRT", "AKMGY", "AKSA", "AKSEN",
-        "AKSGY", "AKSUE", "AKYHO", "ALARK", "ALBRK", "ALCAR", "ALCTL", "ALFAS", "ALGYO", "ALKA",
-        "ALKIM", "ALMAD", "ALTNY", "ALVES", "ANELE", "ANGEN", "ANHYT", "ANSGR", "ARASE", "ARCLK",
-        "ARDYZ", "ARENA", "ARSAN", "ARTMS", "ARZUM", "ASELS", "ASGYO", "ASTOR", "ASUZU", "ATAGY",
-        "ATAKP", "ATATP", "ATEKS", "ATLAS", "ATSYH", "AVGYO", "AVHOL", "AVOD", "AVPGY", "AVTUR",
-        "AYCES", "AYDEM", "AYEN", "AYES", "AYGAZ", "AZTEK", "BABA", "BAGFS", "BAKAB", "BALAT",
-        "BANVT", "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BEYAZ", "BFREN", "BIENY",
-        "BIGCH", "BIMAS", "BINHO", "BIOEN", "BIZIM", "BJKAS", "BLCYT", "BMSCH", "BMSTL", "BNTAS",
-        "BOBET", "BORLS", "BOSSA", "BRISA", "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN",
-        "BRYAT", "BSOKE", "BTCIM", "BUCIM", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CATES",
-        "CCOLA", "CELHA", "CEMAS", "CEMTS", "CEOEM", "CIMSA", "CLEBI", "CMBTN", "CMENT", "CONSE",
-        "COSMO", "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGHL", "DAGI", "DAPGM", "DARDL",
-        "DATA", "DATES", "DDRKM", "DELEG", "DEMISA", "DERHL", "DERIM", "DESA", "DESPC", "DEVA",
-        "DGATE", "DGGYO", "DGNMO", "DIRIT", "DITAS", "DMSAS", "DNISI", "DOAS", "DOBUR", "DOCO",
-        "DOGUB", "DOHOL", "DOKTA", "DURDO", "DYOBY", "DZGYO", "EBEBK", "ECILC", "EPLAS", "ECZYT",
-        "EDATA", "EDIP", "EGEEN", "EGEPO", "EGGUB", "EGPRO", "EGSER", "EKGYO", "EKIZ", "EKSUN",
-        "ELITE", "EMKEL", "EMNIS", "ENJSA", "ENKAI", "ENSRI", "ENTRA", "ENVER", "EPLAS", "ERBOS",
-        "ERCB", "EREGL", "ERSU", "ESCAR", "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO",
-        "EUPWR", "EUREN", "EUYO", "FADE", "FENE", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE",
-        "FRIGO", "FROTO", "FZLGY", "GARAN", "GARFA", "GEDIK", "GEDZA", "GENIL", "GENTS", "GEREL",
-        "GESAN", "GLBMD", "GLCVY", "GLRYH", "GLYHO", "GMTAS", "GOKNR", "GOLTS", "GOODY", "GOZDE",
-        "GRNYO", "GRSEL", "GSDDE", "GSDHO", "GSRAY", "GUBRF", "GWIND", "GZNMI", "HALKB", "HATEK",
-        "HDFGS", "HEDEF", "HEKTS", "HKTM", "HLGYO", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ",
-        "ICBCT", "IDEAS", "IDGYO", "IEYHO", "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY",
-        "IMASM", "INDES", "INFO", "INGRM", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR",
-        "ISCTR", "ISDMR", "ISFIN", "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT",
-        "ITTFH", "IZENR", "IZFAS", "IZINV", "IZMDC", "JANTS", "KAPLM", "KARYE", "KARSN", "KARTN",
-        "KARYE", "KATMR", "KAYSE", "KCAER", "KCMKW", "KDOAS", "KFEIN", "KGYO", "KBORU", "KIMMR",
-        "KLGYO", "KLKIM", "KLMSN", "KLNMA", "KLRHO", "KLSYN", "KMPUR", "KNFRT", "KONKA", "KONTR",
-        "KONYA", "KOPOL", "KORDS", "KOZAA", "KOZAL", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT",
-        "KRPLS", "KRSTL", "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS",
-        "KZBGY", "KZGYO", "LIDER", "LIDFA", "LINK", "LKMNH", "LOGO", "LRSHO", "LUKSK", "MAALT",
-        "MACKO", "MAGEN", "MAKIM", "MAKTK", "MANAS", "MARBL", "MARKA", "MARTI", "MAVI", "MEDTR",
-        "MEGAP", "MEGMT", "MEKAG", "MNDRS", "MENBA", "MERCN", "MERIT", "MERKO", "METUR", "MGROS",
-        "MIATK", "MIPAZ", "MMCAS", "MNDTR", "MOBTL", "MOGAN", "MONDU", "MPARK", "MRGYO", "MRSHL",
-        "MSGYO", "MTRKS", "MTRYO", "MUNDA", "NATA", "NETAS", "NIBAS", "NTGAZ", "NTHOL", "NUGYO",
-        "NUHCM", "OBAMS", "OBASE", "ODAS", "ODINE", "OFSYM", "ONCSM", "ORCAY", "ORGE", "ORMA",
-        "OSMEN", "OSTIM", "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZGYO", "OZKGY",
-        "OZRDN", "OZSUB", "PAGYO", "PAMEL", "PAPIL", "PARSN", "PASEU", "PCILT", "PEGYO", "PEKGY",
-        "PENGD", "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART", "PKENT", "PLAT", "PNLSN",
-        "PNSUT", "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA", "PSDTC", "PSGYO", "QNBFB",
-        "QNBFL", "QUAGR", "RALYH", "RAYSG", "RNPOL", "REEDR", "RHEAG", "RODRG", "ROYAL", "RTALB",
-        "RUBNS", "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL", "SANFM", "SANKO", "SARKY",
-        "SARTN", "SASA", "SAYAS", "SDTTR", "SEKFK", "SEKUR", "SELEC", "SELGD", "SELVA", "SEYKM",
-        "SILVR", "SISE", "SKBNK", "SKTAS", "SMART", "SMRTG", "SNAET", "SNPAM", "SNGYO", "SNKRN",
-        "SOKE", "SOKM", "SONME", "SRVGY", "SUMAS", "SUNGW", "SURGY", "SUWEN", "TABGD", "TARKM",
-        "TATEN", "TATGD", "TAVHL", "TBORG", "TCELL", "TDGYO", "TEKTU", "TERA", "TETMT", "TEZOL",
-        "TGSAS", "THYAO", "TKFEN", "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRCAS",
-        "TRGYO", "TRILC", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK", "TUCLK", "TUKAS", "TUPRS",
-        "TUREX", "TURGG", "TURSG", "UFUK", "ULAS", "ULKER", "ULUFA", "ULUSE", "ULUUN", "UMPAS",
-        "UNLU", "USAK", "UZERB", "VAKBN", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE",
-        "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL",
-        "YGGYO", "YGYO", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZOREN",
-        "ZRGYO"
-    ]
-
+# --- HİSSE LİSTESİ ALTYAPISI ---
 @st.cache_data(ttl=600)
 def tum_hisseleri_getir():
-    """Canlı çeker, olmazsa YEDEK DEV LİSTE'yi kullanır"""
+    """Canlı çeker, olmazsa YEDEK LİSTE"""
     canli_liste = []
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
@@ -138,13 +78,13 @@ def tum_hisseleri_getir():
                     if cols: canli_liste.append(cols[0].find('a').text.strip())
     except: pass
     
-    # Eğer canlı listede 100'den fazla hisse varsa kullan, yoksa Yedeği dön
-    if len(canli_liste) > 100:
+    if len(canli_liste) > 50: 
         return sorted(list(set(canli_liste)))
     else:
-        return sorted(list(set(get_backup_list())))
+        # Site çalışmazsa temel BIST 100 listesi
+        return ["THYAO", "ASELS", "KCHOL", "GARAN", "AKBNK", "SASA", "SISE", "EREGL", "TUPRS", "BIMAS", "HEKTS", "PETKM", "ISCTR", "SAHOL", "FROTO", "YKBNK", "EKGYO", "ODAS", "KOZAL", "KONTR", "ASTOR", "EUPWR", "GUBRF", "OYAKC", "TCELL", "TTKOM", "ENKAI", "VESTL", "ARCLK", "TOASO", "PGSUS", "TAVHL", "MGROS", "SOKM", "AEFES", "AGHOL", "AHGAZ", "AKFGY", "AKSA", "AKSEN", "ALARK", "ALBRK", "ALFAS", "ANSGR", "ARASE", "BERA", "BIOEN", "BOBET", "BRSAN", "BRYAT", "BUCIM", "CANTE", "CCOLA", "CEMTS", "CIMSA", "CWENE", "DOAS", "DOHOL", "ECILC", "ECZYT", "EGEEN", "ENJSA", "ENVER", "ERBOS", "EUREN", "FENE", "GENIL", "GESAN", "GLYHO", "GSDHO", "GWIND", "HALKB", "ISDMR", "ISGYO", "ISMEN", "IZMDC", "KARSN", "KAYSE", "KCAER", "KMPUR", "KORDS", "KOZAA", "KZBGY", "MAVI", "MIATK", "OTKAR", "OYYAT", "PENTA", "QUAGR", "REEDR", "SANTM", "SMRTG", "SKBNK", "SNGYO", "TATGD", "TKFEN", "TMSN", "TSKB", "TURSG", "ULKER", "VAKBN", "VESBE", "YEOTK", "YYLGD", "ZOREN"]
 
-# --- ANALİZ MOTORU ---
+# --- ANALİZ MOTORU (DÜZELTİLMİŞ) ---
 class TradingEngine:
     def __init__(self):
         try: from sklearn.preprocessing import StandardScaler
@@ -152,30 +92,65 @@ class TradingEngine:
         self.model = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42)
     
     def get_live_price(self, ticker):
+        """
+        DÜZELTME: Sayfanın gerçekten o hisseye ait olup olmadığını kontrol eder.
+        Yanlış yönlendirme (Redirect) varsa veriyi almaz.
+        """
         try:
-            url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{ticker.replace('.IS','')}-detay/"
+            clean_ticker = ticker.replace('.IS','')
+            url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{clean_ticker}-detay/"
             headers = {'User-Agent': 'Mozilla/5.0'}
             resp = requests.get(url, headers=headers, timeout=3)
+            
+            # 1. KONTROL: Sayfa başlığında hisse adı geçiyor mu?
+            if clean_ticker not in resp.text:
+                return None # Yanlış sayfa, çık.
+
             soup = BeautifulSoup(resp.content, "html.parser")
             price_span = soup.find("span", {"class": "text-2"})
             if not price_span: price_span = soup.select_one('.price-arrow-down, .price-arrow-up')
-            if price_span: return float(price_span.text.strip().replace(',', '.'))
+            
+            if price_span: 
+                price = float(price_span.text.strip().replace(',', '.'))
+                if price > 0: return price
             return None
         except: return None
 
     def analyze(self, ticker):
         if not ticker.endswith('.IS'): ticker += '.IS'
+        
+        # Throttling önlemek için rastgele mini bekleme
+        time.sleep(random.uniform(0.1, 0.5))
+        
         try:
-            df = yf.download(ticker, period="1mo", interval="60m", progress=False)
+            # 1. Yahoo Finance Verisi (Ana Kaynak)
+            df = yf.download(ticker, period="3mo", interval="60m", progress=False)
+            
+            # --- FİLTRE 1: VERİ YOKSA ---
             if df is None or df.empty or len(df) < 50: return None
             
             if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
             df = df.ffill().bfill()
             
-            live_price = self.get_live_price(ticker)
-            if live_price and (abs(live_price - df.iloc[-1]['Close']) / df.iloc[-1]['Close'] < 0.15):
-                df.iloc[-1, df.columns.get_loc('Close')] = live_price
+            # --- FİLTRE 2: SON FİYAT SIFIRSA ---
+            last_graph_price = df.iloc[-1]['Close']
+            if last_graph_price <= 0: return None
 
+            # 2. Canlı Fiyat Kontrolü (Hata Önleyici)
+            live_price = self.get_live_price(ticker)
+            
+            if live_price:
+                # Canlı fiyat ile grafik fiyatı arasında %20'den fazla fark varsa
+                # Muhtemelen canlı veri yanlıştır (BIMAS verisi çekmiştir vs.)
+                fark_orani = abs(live_price - last_graph_price) / last_graph_price
+                if fark_orani < 0.20:
+                    # Güvenilir, kullan
+                    df.iloc[-1, df.columns.get_loc('Close')] = live_price
+                else:
+                    # Güvenilmez, grafikteki son fiyatı kullanmaya devam et
+                    pass
+
+            # 3. İndikatörler
             df['RSI'] = ta.rsi(df['Close'], length=14)
             df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
             df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
@@ -189,7 +164,10 @@ class TradingEngine:
             prob = self.model.predict_proba(clean_df.iloc[[-1]][features])[0][1] * 100
             
             last = df.iloc[-1]
-            if pd.isna(last['RSI']): return None
+            rsi_val = last['RSI']
+            
+            # --- FİLTRE 3: RSI SAÇMALAMIŞSA ---
+            if pd.isna(rsi_val) or rsi_val <= 1 or rsi_val >= 99: return None
 
             signal, color = "NÖTR / İZLE", "gray"
             stop = last['Close'] - (last['ATR'] * 1.5)
@@ -199,9 +177,15 @@ class TradingEngine:
             elif prob < 40 and last['Close'] < last['VWAP']: signal, color = "SAT 🔻", "red"
             
             return {
-                "Hisse": ticker.replace('.IS',''), "Fiyat": last['Close'], "Skor": prob, 
-                "RSI": last['RSI'], "Sinyal": signal, "Renk": color, 
-                "Stop": stop, "Hedef": target, "Data": df
+                "Hisse": ticker.replace('.IS',''), 
+                "Fiyat": last['Close'], 
+                "Skor": prob, 
+                "RSI": rsi_val, 
+                "Sinyal": signal, 
+                "Renk": color, 
+                "Stop": stop, 
+                "Hedef": target,
+                "Data": df
             }
         except: return None
 
@@ -247,41 +231,40 @@ def main():
                     fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data']['VWAP'], line=dict(color='orange'), name='VWAP'))
                     fig.update_layout(template="plotly_dark", height=350)
                     st.plotly_chart(fig, use_container_width=True)
-                else: st.error("Hisse bulunamadı.")
+                else: st.error("Hisse bulunamadı veya verisi bozuk.")
 
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
-        st.info(f"Veritabanında {len(tum_hisseler)} Hisse Mevcut.")
-        
-        st.markdown("**Bu işlem tüm BIST hisselerini tarar. Sadece 'Güçlü Al' veya 'Sat' sinyali verenleri listeler.**")
+        st.info(f"Takipteki Hisse: {len(tum_hisseler)}")
         
         if st.button("TÜM BORSAYI TARA 🚀", type="primary"):
-            secilenler = tum_hisseler # HEPSİNİ SEÇ
+            random.shuffle(tum_hisseler)
+            secilenler = tum_hisseler 
             results = []
-            
             bar_text = st.empty()
             bar = st.progress(0)
             
-            # Hızlandırılmış Tarama (Max 20 Worker)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            # Worker sayısını düşürdüm (10) ki Yahoo Finance engellemesin
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {executor.submit(engine.analyze, t): t for t in secilenler}
                 done = 0
                 for future in concurrent.futures.as_completed(futures):
                     r = future.result()
-                    # Sadece Sinyal Verenleri Ekle (Boş kalabalık yapmasın)
-                    if r and (r['Renk'] == 'green' or r['Renk'] == 'red'):
+                    # FİYAT SIFIRDAN BÜYÜKSE VE SİNYAL VARSA
+                    if r and (r['Renk'] == 'green' or r['Renk'] == 'red') and r['Fiyat'] > 0:
                         results.append(r)
                     
                     done += 1
                     bar.progress(done/len(secilenler))
-                    bar_text.text(f"Analiz ediliyor: {done}/{len(secilenler)} Hisse")
+                    bar_text.text(f"Analiz ediliyor: {done}/{len(secilenler)}")
             
             bar.empty()
             bar_text.empty()
             
             if results:
-                st.success(f"Tarama Tamamlandı! {len(results)} Kritik Fırsat Bulundu.")
+                st.success(f"Tarama Tamamlandı! {len(results)} Fırsat Bulundu.")
                 df = pd.DataFrame(results)
+                
                 try:
                     st.dataframe(
                         df[['Hisse', 'Fiyat', 'Sinyal', 'Skor', 'RSI']]
@@ -291,7 +274,7 @@ def main():
                     )
                 except: st.dataframe(df, use_container_width=True)
             else:
-                st.warning("Şu an piyasada net bir sinyal (Güçlü Al/Sat) bulunamadı.")
+                st.warning("Piyasada şu an net bir sinyal bulunamadı.")
 
 if __name__ == "__main__":
     main()
