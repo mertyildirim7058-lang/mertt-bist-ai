@@ -11,32 +11,25 @@ import concurrent.futures
 import random
 
 # --- 1. AYARLAR ---
-# Sayfa ikonunu emoji yapıyoruz (Hata vermemesi için)
+LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main/logo.png"
+
 st.set_page_config(
     page_title="MERTT AI", 
     layout="wide", 
     page_icon="🛡️"  
 )
 
-# --- LOGO YARDIMCISI ---
 def logo_goster():
-    """Logoyu yerelden veya internetten bulmaya çalışır"""
-    try:
-        st.image("logo.png", use_container_width=True)
+    try: st.image("logo.png", use_container_width=True)
     except:
-        try:
-            # Buraya kendi GitHub raw linkini koyabilirsin
-            st.image("https://raw.githubusercontent.com/kullaniciadi/proje/main/logo.png", use_container_width=True)
-        except:
-            st.header("🦅 MERTT AI")
+        try: st.image(LOGO_INTERNET_LINKI, use_container_width=True)
+        except: st.header("🦅 MERTT AI")
 
-# --- PWA KODLARI ---
 def pwa_kodlari():
-    pwa_html = """
+    pwa_html = f"""
     <meta name="theme-color" content="#0e1117">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MERTT AI">
+    <link rel="apple-touch-icon" href="{LOGO_INTERNET_LINKI}">
+    <link rel="icon" type="image/png" href="{LOGO_INTERNET_LINKI}">
     """
     components.html(f"<html><head>{pwa_html}</head></html>", height=0, width=0)
 pwa_kodlari()
@@ -65,17 +58,39 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- CANLI HİSSE LİSTESİ (Sadece Radar İçin) ---
-@st.cache_data(ttl=3600)
+# --- CANLI HİSSE LİSTESİ (YEDEKSİZ) ---
+@st.cache_data(ttl=600) # 10 dakikada bir yenile
 def tum_hisseleri_getir():
+    """
+    Sadece canlı veriyi çeker. Çekemezse BOŞ liste döner.
+    Yedek liste İPTAL edildi.
+    """
     try:
         url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.content, 'html.parser')
-        hisseler = [r.find_all('td')[0].find('a').text.strip() for r in soup.find('table', {'id': 'tableHisseOnerileri'}).find('tbody').find_all('tr')]
-        return sorted(list(set(hisseler)))
+        # Timeout süresini biraz artırdık ki hemen pes etmesin
+        response = requests.get(url, timeout=10) 
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            table = soup.find('table', {'id': 'tableHisseOnerileri'})
+            
+            if table:
+                rows = table.find('tbody').find_all('tr')
+                hisseler = []
+                for row in rows:
+                    cols = row.find_all('td')
+                    if cols:
+                        code = cols[0].find('a').text.strip()
+                        hisseler.append(code)
+                
+                # Eğer liste doluysa döndür
+                if len(hisseler) > 0:
+                    return sorted(list(set(hisseler)))
     except:
-        return ["THYAO", "ASELS", "GARAN", "AKBNK", "KCHOL", "SASA", "SISE", "EREGL"]
+        pass
+    
+    # Hata olursa veya site açılmazsa BOŞ liste dön
+    return []
 
 # --- ANALİZ MOTORU ---
 class TradingEngine:
@@ -88,30 +103,27 @@ class TradingEngine:
         try:
             url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{ticker.replace('.IS','')}-detay/"
             headers = {'User-Agent': 'Mozilla/5.0'}
-            resp = requests.get(url, headers=headers, timeout=2)
+            resp = requests.get(url, headers=headers, timeout=3)
             soup = BeautifulSoup(resp.content, "html.parser")
-            price = soup.find("span", {"class": "text-2"}).text.strip().replace(',', '.')
-            return float(price)
+            price_span = soup.find("span", {"class": "text-2"})
+            if not price_span: price_span = soup.select_one('.price-arrow-down, .price-arrow-up')
+            if price_span: return float(price_span.text.strip().replace(',', '.'))
+            return None
         except: return None
 
     def analyze(self, ticker):
         if not ticker.endswith('.IS'): ticker += '.IS'
         try:
-            # 1 Aylık veri (Stabil RSI için)
             df = yf.download(ticker, period="1mo", interval="60m", progress=False)
-            
             if df is None or df.empty or len(df) < 50: return None
-            if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
             
-            # Boşluk doldurma
+            if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
             df = df.ffill().bfill()
             
-            # Canlı Fiyat Entegrasyonu
             live_price = self.get_live_price(ticker)
-            if live_price and (abs(live_price - df.iloc[-1]['Close']) / df.iloc[-1]['Close'] < 0.10):
+            if live_price and (abs(live_price - df.iloc[-1]['Close']) / df.iloc[-1]['Close'] < 0.15):
                 df.iloc[-1, df.columns.get_loc('Close')] = live_price
-            
-            # İndikatörler
+
             df['RSI'] = ta.rsi(df['Close'], length=14)
             df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
             df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
@@ -125,7 +137,7 @@ class TradingEngine:
             prob = self.model.predict_proba(clean_df.iloc[[-1]][features])[0][1] * 100
             
             last = df.iloc[-1]
-            if pd.isna(last['RSI']): return None
+            if pd.isna(last['RSI']) or pd.isna(last['Skor']): return None
 
             signal, color = "NÖTR / İZLE", "gray"
             stop = last['Close'] - (last['ATR'] * 1.5)
@@ -135,15 +147,9 @@ class TradingEngine:
             elif prob < 40 and last['Close'] < last['VWAP']: signal, color = "SAT 🔻", "red"
             
             return {
-                "Hisse": ticker.replace('.IS',''), 
-                "Fiyat": last['Close'], 
-                "Skor": prob, 
-                "RSI": last['RSI'], 
-                "Sinyal": signal,
-                "Renk": color, 
-                "Stop": stop, 
-                "Hedef": target, 
-                "Data": df
+                "Hisse": ticker.replace('.IS',''), "Fiyat": last['Close'], "Skor": prob, 
+                "RSI": last['RSI'], "Sinyal": signal, "Renk": color, 
+                "Stop": stop, "Hedef": target, "Data": df
             }
         except: return None
 
@@ -159,15 +165,14 @@ def main():
             st.rerun()
 
     engine = TradingEngine()
+    
+    # Hisseleri çek (Boş gelirse boş kalır, yedek yok)
+    tum_hisseler = tum_hisseleri_getir()
 
-    # --- 1. MODÜL: HİSSE SORMA (ÖZGÜR MOD) ---
     if menu == "💬 Hisse Sor":
         st.title("🤖 Hisse Analiz Asistanı")
-        
         c1, c2 = st.columns([3,1])
-        with c1: 
-            # BURAYI DEĞİŞTİRDİM: Artık Text Input (Elle Yazma)
-            sembol = st.text_input("Hisse Kodu (Örn: THYAO, FROTO):", "").upper()
+        with c1: sembol = st.text_input("Hisse Kodu (Örn: THYAO):", "").upper()
         with c2: 
             st.markdown("<br>", unsafe_allow_html=True)
             btn = st.button("Analiz Et", type="primary")
@@ -176,39 +181,39 @@ def main():
             with st.spinner(f"{sembol} analiz ediliyor..."):
                 res = engine.analyze(sembol)
                 if res:
-                    # Metrikler
                     k1, k2, k3 = st.columns(3)
                     k1.metric("Fiyat", f"{res['Fiyat']:.2f}")
                     k2.metric("AI Güveni", f"%{res['Skor']:.1f}")
                     k3.metric("RSI (14)", f"{res['RSI']:.0f}")
                     st.divider()
-                    
-                    # Karar Kutusu
                     if res['Renk'] == 'green':
                         st.success(f"### {res['Sinyal']}")
                         st.info(f"🛡️ Stop: {res['Stop']:.2f} | 🎯 Hedef: {res['Hedef']:.2f}")
                     elif res['Renk'] == 'red': st.error(f"### {res['Sinyal']}")
                     else: st.warning(f"### {res['Sinyal']}")
                     
-                    # Grafik
                     fig = go.Figure()
-                    fig.add_trace(go.Candlestick(x=res['Data'].index, open=res['Data']['Open'], high=res['Data']['High'], low=res['Data']['Low'], close=res['Data']['Close'], name="Fiyat"))
+                    fig.add_trace(go.Candlestick(x=res['Data'].index, open=res['Data']['Open'], high=res['Data']['High'], low=res['Data']['Low'], close=res['Data']['Close']))
                     fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data']['VWAP'], line=dict(color='orange'), name='VWAP'))
-                    fig.update_layout(template="plotly_dark", height=350, title=f"{sembol} Saatlik Grafik")
+                    fig.update_layout(template="plotly_dark", height=350)
                     st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.error("Veri bulunamadı veya hisse kodu hatalı.")
+                else: st.error("Hisse verisi bulunamadı.")
 
-    # --- 2. MODÜL: RADAR ---
     elif menu == "📡 Piyasa Radarı":
-        st.title("📡 Piyasa Radarı")
-        tum_hisseler = tum_hisseleri_getir()
-        st.info(f"{len(tum_hisseler)} Hisse Takipte.")
-        count = st.slider("Tarama Limiti", 10, 50, 20)
+        st.title("📡 MERTT Piyasa Radarı")
+        
+        # LİSTE KONTROLÜ
+        if not tum_hisseler:
+            st.error("⚠️ HATA: Canlı Borsa verisine ulaşılamadı!")
+            st.warning("İş Yatırım sitesi yanıt vermiyor olabilir. Lütfen daha sonra tekrar deneyin.")
+            st.stop() # Programı burada durdur, aşağıyı çalıştırma
+            
+        st.info(f"{len(tum_hisseler)} Hisse Canlı Olarak Takipte.")
+        tarama_limiti = st.slider("Tarama Hızı (Hisse Sayısı)", 10, 50, 20)
         
         if st.button("TARAMAYI BAŞLAT 🚀"):
             random.shuffle(tum_hisseler)
-            secilenler = tum_hisseler[:count]
+            secilenler = tum_hisseler[:tarama_limiti]
             results = []
             bar = st.progress(0)
             
@@ -217,7 +222,7 @@ def main():
                 done = 0
                 for future in concurrent.futures.as_completed(futures):
                     r = future.result()
-                    if r: results.append({"Hisse": r['Hisse'], "Fiyat": r['Fiyat'], "Sinyal": r['Sinyal'], "Skor": r['Skor'], "RSI": r['RSI']})
+                    if r: results.append(r)
                     done += 1
                     bar.progress(done/len(secilenler))
             bar.empty()
@@ -226,13 +231,13 @@ def main():
                 df = pd.DataFrame(results)
                 try:
                     st.dataframe(
-                        df.style.format({"Fiyat": "{:.2f}", "Skor": "{:.1f}", "RSI": "{:.0f}"})
+                        df[['Hisse', 'Fiyat', 'Sinyal', 'Skor', 'RSI']]
+                        .style.format({"Fiyat": "{:.2f}", "Skor": "{:.1f}", "RSI": "{:.0f}"})
                         .background_gradient(subset=['Skor'], cmap='Greens'),
                         use_container_width=True
                     )
                 except: st.dataframe(df, use_container_width=True)
-            else: st.warning("Sinyal bulunamadı.")
+            else: st.warning("Seçilen hisselerde sinyal bulunamadı.")
 
 if __name__ == "__main__":
     main()
-                    
