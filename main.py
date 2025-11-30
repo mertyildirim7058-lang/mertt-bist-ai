@@ -6,9 +6,10 @@ import pandas_ta as ta
 import xgboost as xgb
 import numpy as np
 import plotly.graph_objects as go
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 import time
+from PIL import Image
 
 # --- 1. AYARLAR ---
 LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main/logo.png"
@@ -20,6 +21,7 @@ st.set_page_config(
 )
 
 def logo_goster():
+    """Logoyu güvenli şekilde gösterir"""
     try: st.image("logo.png", use_container_width=True)
     except:
         try: st.image(LOGO_INTERNET_LINKI, use_container_width=True)
@@ -58,50 +60,37 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- CANLI LİSTE MOTORU (YEDEKSİZ) ---
-@st.cache_data(ttl=600) # 10 dakikada bir yenile
+# --- CANLI LİSTE MOTORU ---
+@st.cache_data(ttl=600)
 def get_live_tickers():
-    """
-    Sadece İş Yatırım sitesinden canlı listeyi çeker.
-    Yedek liste yoktur. Siteye ulaşamazsa BOŞ döner.
-    """
     canli_liste = []
     try:
-        # Robot korumasını aşmak için User-Agent
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+        headers = {'User-Agent': 'Mozilla/5.0'}
         url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             table = soup.find('table', {'id': 'tableHisseOnerileri'})
-            
             if table:
                 rows = table.find('tbody').find_all('tr')
                 for row in rows:
                     cols = row.find_all('td')
                     if cols:
-                        # Hisse kodunu al (Örn: THYAO)
                         code = cols[0].find('a').text.strip()
                         canli_liste.append(code)
-    except:
-        pass
-    
+    except: pass
     return sorted(list(set(canli_liste)))
 
-# --- TEK HİSSE ANALİZİ (Manuel Sorgu) ---
+# --- TEK HİSSE ANALİZİ ---
 def analyze_single(ticker):
     try:
         t = f"{ticker}.IS"
-        # 3 aylık veri çekiyoruz ki RSI otursun
         df = yf.download(t, period="3mo", interval="60m", progress=False)
         
         if df is None or len(df) < 50: return None
         if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
         
-        # Boşlukları doldur
         df = df.ffill().bfill()
         
         df['RSI'] = ta.rsi(df['Close'], length=14)
@@ -113,48 +102,47 @@ def analyze_single(ticker):
         
         signal = "NÖTR"
         color = "gray"
+        skor = 50
+        
+        # Dinamik Skorlama
         if last['RSI'] < 45 and last['Close'] > last['VWAP']: 
             signal = "GÜÇLÜ AL"
             color = "green"
+            # RSI 30'a yaklaştıkça skor artar (Max 95)
+            skor = min(95, 50 + (50 - last['RSI']) * 1.5)
+            
         elif last['RSI'] > 70:
             signal = "SAT"
             color = "red"
+            # RSI 70'i geçtikçe satış baskısı skoru artar
+            skor = min(90, (last['RSI'] - 50) * 2)
             
         return {
             "Fiyat": last['Close'], "RSI": last['RSI'], 
-            "Sinyal": signal, "Renk": color, 
+            "Sinyal": signal, "Renk": color, "Skor": int(skor),
             "Stop": last['Close'] - last['ATR']*1.5,
             "Hedef": last['Close'] + last['ATR']*3,
             "Data": df
         }
     except: return None
 
-# --- TOPLU ANALİZ (Batch - Turbo Mod) ---
+# --- TOPLU ANALİZ (Batch) ---
 def analyze_batch(tickers_list):
     results = []
     symbols = [f"{t}.IS" for t in tickers_list]
     
     try:
-        # Toplu veri indirme (Hızlı)
         data = yf.download(symbols, period="3mo", interval="60m", group_by='ticker', progress=False, threads=True)
         
         for ticker in tickers_list:
             try:
-                # Veriyi al
-                try:
-                    df = data[f"{ticker}.IS"].copy()
-                except:
-                    continue # Veri yoksa atla
+                try: df = data[f"{ticker}.IS"].copy()
+                except: continue
 
-                # Veri Kontrolü
                 if df.empty or df['Close'].isnull().all(): continue
-                
-                # HALKA ARZ FİLTRESİ:
-                # Eğer hissenin verisi 50 mumdan azsa (Çok yeni arz), analiz etme.
                 df = df.dropna()
                 if len(df) < 50: continue 
                 
-                # İndikatörler
                 rsi = ta.rsi(df['Close'], length=14)
                 vwap = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
                 
@@ -165,26 +153,33 @@ def analyze_batch(tickers_list):
                 if last_close <= 0 or pd.isna(last_rsi): continue
                 
                 signal = "NÖTR"
-                skor = 50
+                skor = 50 # Varsayılan Nötr Skoru
                 
-                # Strateji
+                # --- DİNAMİK SKOR HESAPLAMA ---
                 if last_rsi < 45 and last_close > last_vwap:
                     signal = "GÜÇLÜ AL"
-                    skor = 85
+                    # RSI ne kadar düşükse skor o kadar yüksek (Max 99)
+                    skor = 50 + ((50 - last_rsi) * 2)
+                    if skor > 99: skor = 99
+                    
                 elif last_rsi > 75:
                     signal = "SAT"
-                    skor = 20
+                    # RSI ne kadar yüksekse düşüş ihtimali o kadar yüksek
+                    skor = (last_rsi - 50) * 2
+                    if skor > 95: skor = 95
+                    
                 elif last_close < last_vwap and last_rsi < 50:
                     signal = "DÜŞÜŞ TRENDİ"
                     skor = 30
                 
+                # Sadece önemli sinyalleri al
                 if "AL" in signal or "SAT" in signal or "DÜŞÜŞ" in signal:
                     results.append({
                         "Hisse": ticker,
                         "Fiyat": last_close,
                         "Sinyal": signal,
                         "RSI": last_rsi,
-                        "Skor": skor
+                        "Skor": int(skor) # Tam sayıya çevir
                     })
             except: continue
     except: pass
@@ -201,7 +196,6 @@ def main():
             st.session_state['giris_yapildi'] = False
             st.rerun()
 
-    # --- CANLI LİSTE ÇEKİMİ ---
     tum_hisseler = get_live_tickers()
 
     if menu == "💬 Hisse Sor":
@@ -217,8 +211,8 @@ def main():
                 res = analyze_single(sembol)
                 if res:
                     k1, k2, k3 = st.columns(3)
-                    k1.metric("Fiyat", f"{res['Fiyat']:.2f}")
-                    k2.metric("Sinyal", res['Sinyal'])
+                    k1.metric("Fiyat", f"{res['Fiyat']:.2f} TL")
+                    k2.metric("Sinyal", res['Sinyal'], delta=f"Güven: %{res['Skor']}")
                     k3.metric("RSI", f"{res['RSI']:.0f}")
                     
                     fig = go.Figure()
@@ -230,10 +224,8 @@ def main():
     elif menu == "📡 Piyasa Radarı (Batch)":
         st.title("📡 MERTT Piyasa Radarı")
         
-        # Eğer liste boşsa (Siteye ulaşılamadıysa) DURDUR.
         if not tum_hisseler:
             st.error("⚠️ HATA: Canlı borsa listesine ulaşılamıyor!")
-            st.warning("İş Yatırım sitesi yanıt vermiyor olabilir. Eski veri kullanmamak için işlem durduruldu.")
             st.stop()
             
         st.info(f"Canlı Takipteki Hisse Sayısı: {len(tum_hisseler)}")
@@ -258,14 +250,28 @@ def main():
             
             if all_results:
                 df = pd.DataFrame(all_results)
-                try:
-                    st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
-                    st.dataframe(
-                        df.style.format({"Fiyat": "{:.2f}", "RSI": "{:.0f}", "Skor": "{:.0f}"})
-                        .background_gradient(subset=['Skor'], cmap='RdYlGn'),
-                        use_container_width=True
-                    )
-                except: st.dataframe(df)
+                
+                st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
+                
+                # --- PROFESYONEL TABLO TASARIMI ---
+                st.dataframe(
+                    df,
+                    column_config={
+                        "Hisse": st.column_config.TextColumn("Hisse Kodu"),
+                        "Fiyat": st.column_config.NumberColumn("Fiyat (TL)", format="%.2f TL"),
+                        "Sinyal": st.column_config.TextColumn("AI Kararı"),
+                        "RSI": st.column_config.NumberColumn("RSI Gücü", format="%.0f"),
+                        "Skor": st.column_config.ProgressColumn(
+                            "AI Güven Skoru",
+                            help="Yapay Zeka'nın sinyale olan güven derecesi",
+                            format="%d",
+                            min_value=0,
+                            max_value=100,
+                        ),
+                    },
+                    hide_index=True,
+                    use_container_width=True
+                )
             else:
                 st.warning("Hiçbir sinyal bulunamadı.")
 
