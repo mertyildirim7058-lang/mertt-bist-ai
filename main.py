@@ -1,19 +1,117 @@
-streamlit
-yfinance
-pandas
-pandas_ta
-xgboost
-requests
-beautifulsoup4
-plotly
-lxml
-openpyxl
-scikit-learn
-matplotlib
+import streamlit as st
+import streamlit.components.v1 as components
+import yfinance as yf
+import pandas as pd
+import pandas_ta as ta
+import xgboost as xgb
+import numpy as np
+import plotly.graph_objects as go
+import requests
+from bs4 import BeautifulSoup
+import time
+from PIL import Image
+
+# --- 1. AYARLAR ---
+LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main/logo.png"
+
+st.set_page_config(
+    page_title="MERTT AI", 
+    layout="wide", 
+    page_icon="🛡️"  
+)
+
+def logo_goster():
+    try: st.image("logo.png", use_container_width=True)
+    except:
+        try: st.image(LOGO_INTERNET_LINKI, use_container_width=True)
+        except: st.header("🦅 MERTT AI")
+
+def pwa_kodlari():
+    pwa_html = f"""
+    <meta name="theme-color" content="#0e1117">
+    <link rel="apple-touch-icon" href="{LOGO_INTERNET_LINKI}">
+    <link rel="icon" type="image/png" href="{LOGO_INTERNET_LINKI}">
+    """
+    components.html(f"<html><head>{pwa_html}</head></html>", height=0, width=0)
+pwa_kodlari()
+
+# --- GÜVENLİK DUVARI ---
+def guvenlik_kontrolu():
+    if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
+    
+    if not st.session_state['giris_yapildi']:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            logo_goster()
+            st.markdown("<h4 style='text-align: center;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
+            st.divider()
+            sifre = st.text_input("Erişim Anahtarı:", type="password")
+            if st.button("Sisteme Giriş Yap", type="primary", use_container_width=True):
+                try:
+                    if sifre == st.secrets["GIRIS_SIFRESI"]: 
+                        st.session_state['giris_yapildi'] = True
+                        st.rerun()
+                    else: st.error("⛔ Yetkisiz Erişim!")
+                except: st.error("Sistem Hatası: Şifre tanımlı değil.")
+        return False
+    return True
+
+if not guvenlik_kontrolu(): st.stop()
+
+# --- CANLI LİSTE MOTORU ---
+@st.cache_data(ttl=600)
+def get_live_tickers():
+    canli_liste = []
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            table = soup.find('table', {'id': 'tableHisseOnerileri'})
+            if table:
+                rows = table.find('tbody').find_all('tr')
+                for row in rows:
+                    cols = row.find_all('td')
+                    if cols:
+                        code = cols[0].find('a').text.strip()
+                        canli_liste.append(code)
+    except: pass
+    return sorted(list(set(canli_liste)))
+
+# --- TEK HİSSE ANALİZİ (Düzeltildi) ---
+def analyze_single(ticker):
+    try:
+        t = f"{ticker}.IS"
+        df = yf.download(t, period="3mo", interval="60m", progress=False)
+        
+        if df is None or len(df) < 50: return None
+        if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
+        
+        df = df.ffill().bfill()
+        
+        df['RSI'] = ta.rsi(df['Close'], length=14)
+        df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
+        df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
+        
+        last = df.iloc[-1]
+        if pd.isna(last['RSI']): return None
+        
+        signal = "NÖTR"
+        color = "gray"
+        skor = 50
+        
+        # Dinamik Skorlama (Hizalama Düzeltildi)
+        if last['RSI'] < 45 and last['Close'] > last['VWAP']: 
+            signal = "GÜÇLÜ AL"
+            color = "green"
+            skor = min(95, 50 + (50 - last['RSI']) * 1.5)
+            
         elif last['RSI'] > 70:
             signal = "SAT"
             color = "red"
-            # RSI 70'i geçtikçe satış baskısı skoru artar
             skor = min(90, (last['RSI'] - 50) * 2)
             
         return {
@@ -52,18 +150,16 @@ def analyze_batch(tickers_list):
                 if last_close <= 0 or pd.isna(last_rsi): continue
                 
                 signal = "NÖTR"
-                skor = 50 # Varsayılan Nötr Skoru
+                skor = 50 
                 
-                # --- DİNAMİK SKOR HESAPLAMA ---
+                # --- DİNAMİK SKOR ---
                 if last_rsi < 45 and last_close > last_vwap:
                     signal = "GÜÇLÜ AL"
-                    # RSI ne kadar düşükse skor o kadar yüksek (Max 99)
                     skor = 50 + ((50 - last_rsi) * 2)
                     if skor > 99: skor = 99
                     
                 elif last_rsi > 75:
                     signal = "SAT"
-                    # RSI ne kadar yüksekse düşüş ihtimali o kadar yüksek
                     skor = (last_rsi - 50) * 2
                     if skor > 95: skor = 95
                     
@@ -78,7 +174,7 @@ def analyze_batch(tickers_list):
                         "Fiyat": last_close,
                         "Sinyal": signal,
                         "RSI": last_rsi,
-                        "Skor": int(skor) # Tam sayıya çevir
+                        "Skor": int(skor)
                     })
             except: continue
     except: pass
@@ -152,17 +248,15 @@ def main():
                 
                 st.success(f"Tarama Bitti! {len(df)} Sinyal Bulundu.")
                 
-                # --- PROFESYONEL TABLO TASARIMI ---
                 st.dataframe(
                     df,
                     column_config={
                         "Hisse": st.column_config.TextColumn("Hisse Kodu"),
-                        "Fiyat": st.column_config.NumberColumn("Fiyat (TL)", format="%.2f TL"),
+                        "Fiyat": st.column_config.NumberColumn("Fiyat", format="%.2f TL"),
                         "Sinyal": st.column_config.TextColumn("AI Kararı"),
                         "RSI": st.column_config.NumberColumn("RSI Gücü", format="%.0f"),
                         "Skor": st.column_config.ProgressColumn(
-                            "AI Güven Skoru",
-                            help="Yapay Zeka'nın sinyale olan güven derecesi",
+                            "Güven Skoru",
                             format="%d",
                             min_value=0,
                             max_value=100,
@@ -176,4 +270,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+        
