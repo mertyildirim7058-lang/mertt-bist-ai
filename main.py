@@ -448,4 +448,10 @@ def main():
         if news_list:
             for n in news_list:
                 st.markdown(f"#### 📰 [{n['Title']}]({n['Link']})")
-                st.caption(f"🗓️ {n['Da
+                st.caption(f"🗓️ {n['Date']}")
+                st.write("---")
+        else:
+            st.info("Haber akışı alınamadı.")
+
+if __name__ == "__main__":
+    main()
