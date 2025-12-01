@@ -62,14 +62,78 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
+# --- YEDEK TAM LİSTE (BIST TÜM - 600+ HİSSE) ---
+def get_backup_list():
+    """Siteye ulaşılamazsa kullanılacak TAM LİSTE"""
+    return [
+        "A1CAP", "ACSEL", "ADEL", "ADESE", "ADGYO", "AEFES", "AFYON", "AGESA", "AGHOL", "AGROT", "AGYO",
+        "AHGAZ", "AKBNK", "AKCNS", "AKENR", "AKFGY", "AKFYE", "AKGRT", "AKMGY", "AKSA", "AKSEN",
+        "AKSGY", "AKSUE", "AKYHO", "ALARK", "ALBRK", "ALCAR", "ALCTL", "ALFAS", "ALGYO", "ALKA",
+        "ALKIM", "ALMAD", "ALTNY", "ALVES", "ANELE", "ANGEN", "ANHYT", "ANSGR", "ARASE", "ARCLK",
+        "ARDYZ", "ARENA", "ARSAN", "ARTMS", "ARZUM", "ASELS", "ASGYO", "ASTOR", "ASUZU", "ATAGY",
+        "ATAKP", "ATATP", "ATEKS", "ATLAS", "ATSYH", "AVGYO", "AVHOL", "AVOD", "AVPGY", "AVTUR",
+        "AYCES", "AYDEM", "AYEN", "AYES", "AYGAZ", "AZTEK", "BABA", "BAGFS", "BAKAB", "BALAT",
+        "BANVT", "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BEYAZ", "BFREN", "BIENY",
+        "BIGCH", "BIMAS", "BINHO", "BIOEN", "BIZIM", "BJKAS", "BLCYT", "BMSCH", "BMSTL", "BNTAS",
+        "BOBET", "BORLS", "BOSSA", "BRISA", "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN",
+        "BRYAT", "BSOKE", "BTCIM", "BUCIM", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CATES",
+        "CCOLA", "CELHA", "CEMAS", "CEMTS", "CEOEM", "CIMSA", "CLEBI", "CMBTN", "CMENT", "CONSE",
+        "COSMO", "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGHL", "DAGI", "DAPGM", "DARDL",
+        "DATA", "DATES", "DDRKM", "DELEG", "DEMISA", "DERHL", "DERIM", "DESA", "DESPC", "DEVA",
+        "DGATE", "DGGYO", "DGNMO", "DIRIT", "DITAS", "DMSAS", "DNISI", "DOAS", "DOBUR", "DOCO",
+        "DOGUB", "DOHOL", "DOKTA", "DURDO", "DYOBY", "DZGYO", "EBEBK", "ECILC", "EPLAS", "ECZYT",
+        "EDATA", "EDIP", "EGEEN", "EGEPO", "EGGUB", "EGPRO", "EGSER", "EKGYO", "EKIZ", "EKSUN",
+        "ELITE", "EMKEL", "EMNIS", "ENJSA", "ENKAI", "ENSRI", "ENTRA", "ENVER", "EPLAS", "ERBOS",
+        "ERCB", "EREGL", "ERSU", "ESCAR", "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO",
+        "EUPWR", "EUREN", "EUYO", "FADE", "FENE", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE",
+        "FRIGO", "FROTO", "FZLGY", "GARAN", "GARFA", "GEDIK", "GEDZA", "GENIL", "GENTS", "GEREL",
+        "GESAN", "GLBMD", "GLCVY", "GLRYH", "GLYHO", "GMTAS", "GOKNR", "GOLTS", "GOODY", "GOZDE",
+        "GRNYO", "GRSEL", "GSDDE", "GSDHO", "GSRAY", "GUBRF", "GWIND", "GZNMI", "HALKB", "HATEK",
+        "HDFGS", "HEDEF", "HEKTS", "HKTM", "HLGYO", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ",
+        "ICBCT", "IDEAS", "IDGYO", "IEYHO", "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY",
+        "IMASM", "INDES", "INFO", "INGRM", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR",
+        "ISCTR", "ISDMR", "ISFIN", "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT",
+        "ITTFH", "IZENR", "IZFAS", "IZINV", "IZMDC", "JANTS", "KAPLM", "KARYE", "KARSN", "KARTN",
+        "KARYE", "KATMR", "KAYSE", "KCAER", "KCMKW", "KDOAS", "KFEIN", "KGYO", "KBORU", "KIMMR",
+        "KLGYO", "KLKIM", "KLMSN", "KLNMA", "KLRHO", "KLSYN", "KMPUR", "KNFRT", "KONKA", "KONTR",
+        "KONYA", "KOPOL", "KORDS", "KOZAA", "KOZAL", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT",
+        "KRPLS", "KRSTL", "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS",
+        "KZBGY", "KZGYO", "LIDER", "LIDFA", "LINK", "LKMNH", "LOGO", "LRSHO", "LUKSK", "MAALT",
+        "MACKO", "MAGEN", "MAKIM", "MAKTK", "MANAS", "MARBL", "MARKA", "MARTI", "MAVI", "MEDTR",
+        "MEGAP", "MEGMT", "MEKAG", "MNDRS", "MENBA", "MERCN", "MERIT", "MERKO", "METUR", "MGROS",
+        "MIATK", "MIPAZ", "MMCAS", "MNDTR", "MOBTL", "MOGAN", "MONDU", "MPARK", "MRGYO", "MRSHL",
+        "MSGYO", "MTRKS", "MTRYO", "MUNDA", "NATA", "NETAS", "NIBAS", "NTGAZ", "NTHOL", "NUGYO",
+        "NUHCM", "OBAMS", "OBASE", "ODAS", "ODINE", "OFSYM", "ONCSM", "ORCAY", "ORGE", "ORMA",
+        "OSMEN", "OSTIM", "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZGYO", "OZKGY",
+        "OZRDN", "OZSUB", "PAGYO", "PAMEL", "PAPIL", "PARSN", "PASEU", "PCILT", "PEGYO", "PEKGY",
+        "PENGD", "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART", "PKENT", "PLAT", "PNLSN",
+        "PNSUT", "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA", "PSDTC", "PSGYO", "QNBFB",
+        "QNBFL", "QUAGR", "RALYH", "RAYSG", "RNPOL", "REEDR", "RHEAG", "RODRG", "ROYAL", "RTALB",
+        "RUBNS", "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL", "SANFM", "SANKO", "SARKY",
+        "SARTN", "SASA", "SAYAS", "SDTTR", "SEKFK", "SEKUR", "SELEC", "SELGD", "SELVA", "SEYKM",
+        "SILVR", "SISE", "SKBNK", "SKTAS", "SMART", "SMRTG", "SNAET", "SNPAM", "SNGYO", "SNKRN",
+        "SOKE", "SOKM", "SONME", "SRVGY", "SUMAS", "SUNGW", "SURGY", "SUWEN", "TABGD", "TARKM",
+        "TATEN", "TATGD", "TAVHL", "TBORG", "TCELL", "TDGYO", "TEKTU", "TERA", "TETMT", "TEZOL",
+        "TGSAS", "THYAO", "TKFEN", "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRCAS",
+        "TRGYO", "TRILC", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK", "TUCLK", "TUKAS", "TUPRS",
+        "TUREX", "TURGG", "TURSG", "UFUK", "ULAS", "ULKER", "ULUFA", "ULUSE", "ULUUN", "UMPAS",
+        "UNLU", "USAK", "UZERB", "VAKBN", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE",
+        "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL",
+        "YGGYO", "YGYO", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZOREN",
+        "ZRGYO"
+    ]
+
 # --- CANLI LİSTE MOTORU ---
 @st.cache_data(ttl=600)
 def get_live_tickers():
     canli_liste = []
+    
+    # 1. İş Yatırım'dan Çekmeye Çalış
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
         url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
+        
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             table = soup.find('table', {'id': 'tableHisseOnerileri'})
@@ -77,95 +141,89 @@ def get_live_tickers():
                 rows = table.find('tbody').find_all('tr')
                 for row in rows:
                     cols = row.find_all('td')
-                    if cols: canli_liste.append(cols[0].find('a').text.strip())
+                    if cols:
+                        code = cols[0].find('a').text.strip()
+                        canli_liste.append(code)
     except: pass
-    return sorted(list(set(canli_liste)))
+    
+    # 2. Eğer Canlı Liste Doluysa Onu Kullan, Boşsa Yedeği Kullan
+    if len(canli_liste) > 50:
+        return sorted(list(set(canli_liste)))
+    else:
+        return sorted(list(set(get_backup_list())))
 
-# --- 🌍 GELİŞMİŞ GLOBAL & HABER MOTORU (DÜZELTİLDİ) ---
+# --- 2. CANLI FİYAT (SNIPER MODE) ---
+def get_realtime_price(ticker):
+    try:
+        url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{ticker.replace('.IS','')}-detay/"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        resp = requests.get(url, headers=headers, timeout=3)
+        soup = BeautifulSoup(resp.content, "html.parser")
+        price_span = soup.find("span", {"class": "text-2"})
+        if not price_span: price_span = soup.select_one('.price-arrow-down, .price-arrow-up')
+        if price_span: return float(price_span.text.strip().replace(',', '.'))
+    except: return None
+
+# --- 3. GLOBAL VE HABER MOTORU ---
 class GlobalIntel:
     def __init__(self):
         self.risk_keywords = ['savaş', 'kriz', 'çöküş', 'enflasyon', 'faiz', 'gerilim', 'yaptırım']
         self.tech_keywords = ['yapay zeka', 'rekor', 'büyüme', 'anlaşma', 'onay', 'ihracat', 'yatırım', 'temettü']
-        
-        # Google News'i kandırmak için Header
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
-        }
 
     def get_global_indices(self):
-        """Global verileri 'nan' hatası olmadan çeker"""
         indices = {
             "S&P 500": "^GSPC", 
-            "Altın": "GC=F", 
-            "Bitcoin": "BTC-USD", 
-            "Dolar": "DX-Y.NYB", 
-            "Petrol": "BZ=F"
+            "Altın (Ons)": "GC=F", 
+            "Bitcoin ($)": "BTC-USD", 
+            "Dolar/TL": "TRY=X",
+            "Brent Petrol": "BZ=F"
         }
         data = {}
         try:
             tickers = " ".join(indices.values())
-            # Period'u 5 güne çıkardık ki hafta sonu boşluklarını doldurabilsin
-            df = yf.download(tickers, period="5d", progress=False)['Close']
-            
-            # Boşlukları doldur (Forward Fill)
-            df = df.ffill()
+            df = yf.download(tickers, period="5d", interval="15m", progress=False)['Close']
+            df = df.ffill().bfill()
             
             for name, symbol in indices.items():
                 try:
-                    # Son dolu veriyi al
-                    series = df[symbol].dropna()
-                    if len(series) >= 2:
-                        price = series.iloc[-1]
-                        prev = series.iloc[-2]
-                        change = ((price - prev) / prev) * 100
-                    elif len(series) == 1:
-                        price = series.iloc[-1]
-                        change = 0.0
-                    else:
-                        price = 0.0
-                        change = 0.0
-                        
-                    data[name] = {"Fiyat": price, "Degisim": change}
+                    price = df[symbol].dropna().iloc[-1]
+                    prev = df[symbol].dropna().iloc[-2]
+                    change = ((price - prev) / prev) * 100
+                    fmt = "%.2f"
+                    if "Bitcoin" in name: fmt = "%.0f"
+                    data[name] = {"Fiyat": price, "Degisim": change, "Fmt": fmt}
                 except: 
-                    data[name] = {"Fiyat": 0.0, "Degisim": 0.0}
+                    data[name] = {"Fiyat": 0.0, "Degisim": 0.0, "Fmt": "%.2f"}
         except: pass
         return data
 
     def analyze_news(self, query_type="GENEL", ticker=""):
-        """Haberleri Requests ile zorla çeker"""
-        sentiment = 0
         news_list = []
+        feeds = []
         
         if query_type == "HISSE":
-            query = f"{ticker} hisse kap borsa"
+            feeds.append(f"https://news.google.com/rss/search?q={ticker}+hisse+kap&hl=tr&gl=TR&ceid=TR:tr")
         else:
-            query = "Borsa İstanbul Türkiye Ekonomi Gündem"
+            feeds = [
+                "https://news.google.com/rss/search?q=Borsa+İstanbul+Son+Dakika&hl=tr&gl=TR&ceid=TR:tr",
+                "https://news.google.com/rss/search?q=Türkiye+Ekonomi+Haberleri&hl=tr&gl=TR&ceid=TR:tr"
+            ]
             
-        url = f"https://news.google.com/rss/search?q={query}&hl=tr&gl=TR&ceid=TR:tr"
-        
-        try:
-            # Önce Requests ile XML'i çekiyoruz (Feedparser tek başına engellenebilir)
-            response = requests.get(url, headers=self.headers, timeout=5)
-            if response.status_code == 200:
-                feed = feedparser.parse(response.content)
-                
+        sentiment = 0
+        for url in feeds:
+            try:
+                feed = feedparser.parse(url)
                 for entry in feed.entries[:5]:
-                    title = entry.title
-                    link = entry.link
-                    date = entry.published if 'published' in entry else "Tarih Yok"
-                    
-                    news_list.append({"Title": title, "Link": link, "Date": date})
-                    
-                    # Puanlama
+                    title = entry.title.replace(" - Haberler", "")
+                    news_list.append({"Title": title, "Link": entry.link, "Date": "Yeni"})
                     t_lower = title.lower()
                     for w in self.tech_keywords: 
                         if w in t_lower: sentiment += 2
                     for w in self.risk_keywords: 
                         if w in t_lower: sentiment -= 3
-        except: pass
-        
-        return sentiment, news_list
+            except: pass
+            
+        return sentiment, news_list[:15]
 
 # --- ANALİZ MOTORU ---
 class TradingEngine:
@@ -190,8 +248,8 @@ class TradingEngine:
     def analyze(self, ticker, mode="PRO"):
         try:
             t = f"{ticker}.IS"
-            df = yf.download(t, period="6mo", interval="60m", progress=False)
-            if df is None or len(df) < 100: return None
+            df = yf.download(t, period="3mo", interval="60m", progress=False)
+            if df is None or len(df) < 50: return None
             if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
             
             if df.index.tz is None: df.index = df.index.tz_localize('UTC')
@@ -199,30 +257,22 @@ class TradingEngine:
             df = df.ffill().bfill()
 
             is_live = False
-            # Canlı Yama
             if mode == "PRO":
                 live_price = get_realtime_price(ticker)
                 if live_price and live_price > 0:
                     if abs(live_price - df.iloc[-1]['Close']) / df.iloc[-1]['Close'] < 0.20:
                         df.iloc[-1, df.columns.get_loc('Close')] = live_price
-                        if live_price > df.iloc[-1]['High']: df.iloc[-1, df.columns.get_loc('High')] = live_price
-                        if live_price < df.iloc[-1]['Low']: df.iloc[-1, df.columns.get_loc('Low')] = live_price
                         is_live = True
 
-            # İndikatörler
             df['RSI'] = ta.rsi(df['Close'], length=14)
             macd = ta.macd(df['Close'])
             df = pd.concat([df, macd], axis=1)
-            
             bb = ta.bbands(df['Close'], length=20)
             if bb is not None: df = pd.concat([df, bb], axis=1)
-            
             ichimoku = ta.ichimoku(df['High'], df['Low'], df['Close'])[0]
             df = pd.concat([df, ichimoku], axis=1)
-            
             psar = ta.psar(df['High'], df['Low'], df['Close'])
             df = pd.concat([df, psar], axis=1)
-            
             try: psar_col = [c for c in df.columns if c.startswith('PSAR')][0]
             except: psar_col = None
 
@@ -232,7 +282,6 @@ class TradingEngine:
             last = df.iloc[-1]
             if pd.isna(last['RSI']): return None
 
-            # Puanlama
             score = 50
             reasons = []
 
@@ -246,12 +295,6 @@ class TradingEngine:
             span_b = df['ISB_26'].iloc[-1]
             if last['Close'] > span_a and last['Close'] > span_b: score += 15; reasons.append("Ichimoku Bulutu Üstünde")
 
-            # Bollinger (Dinamik)
-            bbl = next((c for c in df.columns if c.startswith('BBL')), None)
-            if bbl and last['Close'] <= last[bbl] * 1.01:
-                score += 15; reasons.append("Bollinger Alt Bandı Teması")
-
-            # Haber Analizi
             news_data = None
             if mode == "PRO":
                 news_score, news_list = self.intel.analyze_news("HISSE", ticker)
@@ -260,7 +303,6 @@ class TradingEngine:
                 if news_score > 0: reasons.append("Haber Akışı Pozitif")
             
             score = max(0, min(100, score))
-            
             signal, color = "NÖTR / İZLE", "gray"
             if score >= 80: signal, color = "GÜÇLÜ AL 🚀", "green"
             elif score >= 60: signal, color = "AL 🌱", "blue"
@@ -279,7 +321,6 @@ class TradingEngine:
             }
         except Exception as e: return None
 
-    # Hızlı Tarama
     def analyze_batch(self, tickers_list):
         results = []
         symbols = [f"{t}.IS" for t in tickers_list]
@@ -299,7 +340,6 @@ class TradingEngine:
                     last_vwap = vwap.iloc[-1]
                     if last_close <= 0 or pd.isna(last_rsi): continue
                     
-                    # Hızlı Skor
                     score = 50
                     if rsi.iloc[-1] < 45 and last['Close'] > vwap.iloc[-1]: score = 85
                     elif rsi.iloc[-1] > 70: score = 20
@@ -314,19 +354,6 @@ class TradingEngine:
         except: pass
         return results
 
-# 2. CANLI FİYAT
-def get_realtime_price(ticker):
-    time.sleep(random.uniform(0.5, 1.5))
-    try:
-        url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{ticker.replace('.IS','')}-detay/"
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        resp = requests.get(url, headers=headers, timeout=3)
-        soup = BeautifulSoup(resp.content, "html.parser")
-        price_span = soup.find("span", {"class": "text-2"})
-        if not price_span: price_span = soup.select_one('.price-arrow-down, .price-arrow-up')
-        if price_span: return float(price_span.text.strip().replace(',', '.'))
-    except: return None
-
 # --- ARAYÜZ ---
 def main():
     with st.sidebar:
@@ -340,15 +367,12 @@ def main():
 
     engine = TradingEngine()
     intel = GlobalIntel()
-    
-    # Canlı Liste Çek
     tum_hisseler = get_live_tickers()
 
-    # --- 1. KISIM: MANUEL SORGU ---
     if menu == "💬 Hisse Sor / Analiz":
         st.title("💬 Hisse Analiz Asistanı")
         c1, c2 = st.columns([3,1])
-        with c1: sembol = st.text_input("Hisse Kodu (Örn: THYAO):", "").upper()
+        with c1: sembol = st.text_input("Hisse Kodu (Örn: THYAO, SASA):", "").upper()
         with c2: 
             st.markdown("<br>", unsafe_allow_html=True)
             btn = st.button("ANALİZ ET 🔍", type="primary")
@@ -358,7 +382,6 @@ def main():
                 res = engine.analyze(sembol, mode="PRO")
                 
                 if res:
-                    # Üst Panel
                     k1, k2, k3, k4 = st.columns(4)
                     k1.metric("Fiyat", f"{res['Fiyat']:.2f} TL", delta="Canlı" if res['Is_Live'] else "Gecikmeli")
                     k2.metric("Skor", f"{res['Skor']}/100")
@@ -368,7 +391,6 @@ def main():
                     
                     st.divider()
                     
-                    # Grafik
                     col_g, col_d = st.columns([2, 1])
                     with col_g:
                         st.subheader(f"📊 {sembol} Teknik Grafik")
@@ -379,7 +401,7 @@ def main():
                         bbu = next((c for c in df.columns if c.startswith('BBU')), None)
                         bbl = next((c for c in df.columns if c.startswith('BBL')), None)
                         if bbu and bbl:
-                            fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
+                                      fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
                             fig.add_trace(go.Scatter(x=df.index, y=df[bbl], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
                         
                         fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange', width=2), name='VWAP'))
@@ -402,10 +424,13 @@ def main():
                         st.error(f"Stop: {res['Stop']:.2f}")
                         st.success(f"Hedef: {res['Hedef']:.2f}")
                         
+                        if temel:
+                            st.markdown("---")
+                            st.write(f"**F/K:** {temel['FK']} | **PD/DD:** {temel['PD_DD']}")
+                        
                         st.markdown("#### 📝 Nedenleri")
                         for y in res['Yorumlar']: st.markdown(f"✅ {y}")
 
-                    # Haberler
                     st.markdown("---")
                     st.subheader(f"📰 {sembol} Özel İstihbarat")
                     if res['Haberler']:
@@ -415,12 +440,11 @@ def main():
 
                 else: st.error("Hisse bulunamadı veya veri yok.")
 
-    # --- 2. KISIM: RADAR (OTOMATİK) ---
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
         
         if not tum_hisseler:
-            st.error("⚠️ Liste çekilemedi. İş Yatırım'dan yanıt yok.")
+            st.error("⚠️ Liste çekilemedi. Bağlantı yok.")
             st.stop()
             
         st.info(f"Takipteki Hisse Sayısı: {len(tum_hisseler)}")
@@ -458,7 +482,6 @@ def main():
             else:
                 st.warning("Sinyal yok.")
 
-    # --- 3. KISIM: GLOBAL & HABER ---
     elif menu == "🌍 Global & Haber Odası":
         st.title("🌍 Dünya Piyasaları & Gündem")
         
