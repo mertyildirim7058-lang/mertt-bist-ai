@@ -20,7 +20,7 @@ def send_telegram(message):
 def get_live_tickers():
     # ... (Aynı Canlı Liste Fonksiyonu) ...
     # Kısaltmak için buraya önceki kodlardaki listeyi koyabilirsin veya boş dönerse BIST 30 kullanır
-    return ["THYAO", "ASELS", "KCHOL", "GARAN", "AKBNK", "SASA", "SISE", "EREGL"] # Örnek
+     return ["THYAO", "ASELS", "KCHOL", "GARAN", "AKBNK", "SASA", "SISE", "EREGL"] # Örnek
 
 class NewsEngine:
     def analyze_sentiment(self, ticker):
