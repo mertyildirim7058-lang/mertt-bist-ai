@@ -1,10 +1,11 @@
-name: MERTT Bot Tetikleyici
+name: MERTT Bot Tetikleyici (15 Dk)
 
 on:
   schedule:
-    # Hafta içi, Türkiye saatiyle 10:30 - 18:30 arası her saat başı
-    - cron: '30 7-15 * * 1-5'
-  workflow_dispatch: # GitHub sitesinden elle "Run" diyebilmek için
+    # Hafta içi (Pzt-Cum), UTC 07:00 - 15:45 arası (TR 10:00 - 18:45)
+    # Her 15 dakikada bir çalıştır: */15
+    - cron: '*/15 7-15 * * 1-5'
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -16,10 +17,9 @@ jobs:
         with:
           python-version: '3.9'
       - name: Kütüphaneleri Yükle
-        run: pip install yfinance pandas pandas_ta requests
+        run: pip install yfinance pandas pandas_ta requests beautifulsoup4 lxml feedparser xgboost scikit-learn
       - name: Botu Başlat
         env:
-          # GitHub Secrets'taki şifreleri koda aktarıyoruz
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python otomatik_bot.py
