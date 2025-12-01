@@ -1,33 +1,162 @@
-name: MERTT Bot Tetikleyici (Otomatik)
+import yfinance as yf
+import pandas as pd
+import pandas_ta as ta
+import xgboost as xgb
+import requests
+import feedparser
+from bs4 import BeautifulSoup
+import os
+import concurrent.futures
+import time
+import random
+import numpy as np
 
-on:
-  schedule:
-    # Hafta içi (Pzt-Cum), 15 dakikada bir çalış
-    - cron: '*/15 7-15 * * 1-5'
-  workflow_dispatch: # Elle çalıştırma butonu
+# --- AYARLAR ---
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
-jobs:
-  run-bot:
-    runs-on: ubuntu-latest
+def send_telegram(message):
+    if TELEGRAM_TOKEN and CHAT_ID:
+        try:
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+            payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+            requests.post(url, json=payload)
+        except: pass
+
+# --- CANLI LİSTE ---
+def get_live_tickers():
+    canli_liste = []
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
+        r = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(r.content, 'html.parser')
+        table = soup.find('table', {'id': 'tableHisseOnerileri'})
+        if table:
+            rows = table.find('tbody').find_all('tr')
+            for row in rows:
+                cols = row.find_all('td')
+                if cols: canli_liste.append(cols[0].find('a').text.strip())
+    except: pass
     
-    steps:
-      - name: Depoyu Çek (Kodları Al)
-        uses: actions/checkout@v3
+    if len(canli_liste) < 10:
+        # Yedek liste (İş Yatırım kapalıysa)
+        return ["THYAO", "ASELS", "KCHOL", "GARAN", "AKBNK", "SASA", "SISE", "EREGL", "TUPRS", "BIMAS", "HEKTS", "PETKM"]
+    return sorted(list(set(canli_liste)))
 
-      - name: Python Kurulumu
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+# --- HABER MOTORU ---
+class NewsEngine:
+    def __init__(self):
+        self.pozitif = ['kar', 'artış', 'büyüme', 'rekor', 'onay', 'temettü', 'anlaşma', 'ihale', 'geri alım', 'yatırım']
+        self.negatif = ['zarar', 'düşüş', 'ceza', 'iptal', 'kriz', 'soruşturma', 'borç', 'satış']
 
-      - name: Kütüphaneleri Yükle (Tam Liste)
-        # BURASI DEĞİŞTİ: Artık tek tek yazmıyoruz, dosyadan okuyor.
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    def analyze_sentiment(self, ticker):
+        score = 0
+        try:
+            url = f"https://news.google.com/rss/search?q={ticker}+hisse+kap&hl=tr&gl=TR&ceid=TR:tr"
+            feed = feedparser.parse(url)
+            for entry in feed.entries[:2]:
+                title = entry.title.lower()
+                for w in self.pozitif: 
+                    if w in title: score += 5
+                for w in self.negatif: 
+                    if w in title: score -= 5
+        except: pass
+        return max(-15, min(15, score))
 
-      - name: Botu Başlat
-        env:
-          # Şifreleri kasadan al
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python otomatik_bot.py
+# --- ANALİZ MOTORU ---
+def analyze_batch(tickers_list):
+    results = []
+    symbols = [f"{t}.IS" for t in tickers_list]
+    news_engine = NewsEngine()
+    
+    try:
+        # 3 Aylık Veri Çek (Batch)
+        data = yf.download(symbols, period="3mo", interval="60m", group_by='ticker', progress=False, threads=True)
+        
+        for ticker in tickers_list:
+            try:
+                try: df = data[f"{ticker}.IS"].copy()
+                except: continue
+
+                if df.empty or df['Close'].isnull().all(): continue
+                df = df.dropna()
+                if len(df) < 50: continue 
+                
+                # --- TEKNİK ---
+                rsi = ta.rsi(df['Close'], length=14)
+                vwap = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
+                macd = ta.macd(df['Close'])
+                
+                last_close = df['Close'].iloc[-1]
+                last_rsi = rsi.iloc[-1]
+                
+                if last_close <= 0 or pd.isna(last_rsi): continue
+                
+                score = 50
+                reasons = []
+                
+                # 1. Teknik Puanlar
+                if last_rsi < 35: 
+                    score += 25
+                    reasons.append(f"RSI Dip ({last_rsi:.0f})")
+                elif last_rsi > 75: 
+                    score -= 20
+                
+                if last_close > vwap.iloc[-1]: score += 10
+                
+                if macd['MACD_12_26_9'].iloc[-1] > macd['MACDs_12_26_9'].iloc[-1]:
+                    score += 15
+                    reasons.append("MACD Al")
+
+                # 2. Akıllı Haber Taraması (Sadece umut vaat edenler için)
+                if score >= 70:
+                    n_score = news_engine.analyze_sentiment(ticker)
+                    score += n_score
+                    if n_score > 0: reasons.append("Haber+")
+                
+                score = max(0, min(100, score))
+                
+                # --- SİNYAL ---
+                # Eşik değeri 85 (Çok Seçici)
+                if score >= 85:
+                    results.append({
+                        "Hisse": ticker,
+                        "Fiyat": last_close,
+                        "Skor": score,
+                        "Detay": ", ".join(reasons)
+                    })
+                    
+            except: continue
+    except: pass
+    return results
+
+def main():
+    print("Bot Tarama Başlatıyor...")
+    tickers = get_live_tickers()
+    if not tickers: return
+    
+    firsatlar = []
+    chunk_size = 50
+    chunks = [tickers[i:i + chunk_size] for i in range(0, len(tickers), chunk_size)]
+    
+    for chunk in chunks:
+        res = analyze_batch(chunk)
+        firsatlar.extend(res)
+        time.sleep(1)
+        
+    if firsatlar:
+        firsatlar.sort(key=lambda x: x['Skor'], reverse=True)
+        top_picks = firsatlar[:8] # En iyi 8 tanesini at
+        
+        msg = "🦅 **MERTT AI: Canlı Fırsat Alarmı** 🦅\n\n"
+        for f in top_picks:
+            msg += f"🟢 *{f['Hisse']}* | {f['Fiyat']:.2f} TL\n"
+            msg += f"   └ Puan: {f['Skor']} | {f['Detay']}\n\n"
+            
+        send_telegram(msg)
+    else:
+        print("Fırsat yok.")
+
+if __name__ == "__main__":
+    main()
