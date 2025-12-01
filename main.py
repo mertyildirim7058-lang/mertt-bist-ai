@@ -41,10 +41,11 @@ pwa_kodlari()
 # --- GÜVENLİK DUVARI ---
 def guvenlik_kontrolu():
     if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
+    
     if not st.session_state['giris_yapildi']:
+        st.markdown("<br><br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            st.markdown("<br><br>", unsafe_allow_html=True)
             logo_goster()
             st.markdown("<h4 style='text-align: center; color: #4CAF50;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
             st.divider()
@@ -84,7 +85,6 @@ def get_live_tickers():
 
 # 2. CANLI FİYAT (İş Yatırım - Sniper Mode)
 def get_realtime_price(ticker):
-    # İnsan taklidi için rastgele bekleme
     time.sleep(random.uniform(0.5, 1.5))
     try:
         url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{ticker.replace('.IS','')}-detay/"
@@ -158,18 +158,16 @@ class TradingEngine:
     def analyze(self, ticker, mode="PRO"):
         try:
             t = f"{ticker}.IS"
-            # Geçmiş Veri
             df = yf.download(t, period="6mo", interval="60m", progress=False)
             if df is None or len(df) < 100: return None
             if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
             
-            # Saat Ayarı
             if df.index.tz is None: df.index = df.index.tz_localize('UTC')
             df.index = df.index.tz_convert('Europe/Istanbul')
             df = df.ffill().bfill()
 
             is_live = False
-            # Canlı Yama (Sadece Tekli Sorguda)
+            # Canlı Yama
             if mode == "PRO":
                 live_price = get_realtime_price(ticker)
                 if live_price and live_price > 0:
@@ -183,13 +181,22 @@ class TradingEngine:
             df['RSI'] = ta.rsi(df['Close'], length=14)
             macd = ta.macd(df['Close'])
             df = pd.concat([df, macd], axis=1)
+            
+            # Bollinger (Hata Önleyici İle)
             bb = ta.bbands(df['Close'], length=20)
-            df = pd.concat([df, bb], axis=1)
+            if bb is not None:
+                df = pd.concat([df, bb], axis=1)
+            
             ichimoku = ta.ichimoku(df['High'], df['Low'], df['Close'])[0]
             df = pd.concat([df, ichimoku], axis=1)
+            
             psar = ta.psar(df['High'], df['Low'], df['Close'])
             df = pd.concat([df, psar], axis=1)
-            psar_col = [c for c in df.columns if c.startswith('PSAR')][0]
+            
+            # Dinamik Kolon Bulma (Hata Çözümü)
+            try:
+                psar_col = [c for c in df.columns if c.startswith('PSAR')][0]
+            except: psar_col = None
 
             df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
             df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
@@ -203,7 +210,7 @@ class TradingEngine:
 
             if last['Close'] > last['VWAP']: score += 10; reasons.append("Fiyat VWAP Üzerinde")
             if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al Sinyali")
-            if df[psar_col].iloc[-1] < last['Close']: score += 10; reasons.append("PSAR Yükseliş")
+            if psar_col and df[psar_col].iloc[-1] < last['Close']: score += 10; reasons.append("PSAR Yükseliş")
             if last['RSI'] < 30: score += 20; reasons.append("RSI Aşırı Satım (Fırsat)")
             elif last['RSI'] > 70: score -= 15; reasons.append("RSI Aşırı Alım")
             
@@ -211,7 +218,13 @@ class TradingEngine:
             span_b = df['ISB_26'].iloc[-1]
             if last['Close'] > span_a and last['Close'] > span_b: score += 15; reasons.append("Ichimoku Bulutu Üstünde")
 
-            # Haber Analizi (Sadece Tekli Modda)
+            # Bollinger Alt Bandı (Dinamik Kontrol)
+            # Sütun adı BBL_20_2.0 olmayabilir, 'BBL' ile başlayanı bul
+            bbl_col = next((col for col in df.columns if col.startswith('BBL')), None)
+            if bbl_col and last['Close'] <= last[bbl_col] * 1.01:
+                score += 15; reasons.append("Bollinger Alt Bandı Teması")
+
+            # Haber Analizi
             news_data = None
             if mode == "PRO":
                 news_score, news_list = self.intel.analyze_news(ticker)
@@ -237,9 +250,11 @@ class TradingEngine:
                 "Data": df, "Tarih": df.index[-1].strftime('%d %B %H:%M'),
                 "Is_Live": is_live, "Temel": temel, "Haberler": news_data
             }
-        except: return None
+        except Exception as e: 
+            print(f"Analiz Hatası: {e}")
+            return None
 
-    # Hızlı Tarama (Sadece Yfinance)
+    # Hızlı Tarama
     def analyze_batch(self, tickers_list):
         results = []
         symbols = [f"{t}.IS" for t in tickers_list]
@@ -254,8 +269,10 @@ class TradingEngine:
                     if len(df) < 50: continue 
                     rsi = ta.rsi(df['Close'], length=14)
                     vwap = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
-                    last = df.iloc[-1]
-                    if last['Close'] <= 0 or pd.isna(last.name): continue
+                    last_close = df['Close'].iloc[-1]
+                    last_rsi = rsi.iloc[-1]
+                    last_vwap = vwap.iloc[-1]
+                    if last_close <= 0 or pd.isna(last_rsi): continue
                     
                     # Hızlı Skor
                     score = 50
@@ -277,9 +294,7 @@ def main():
     with st.sidebar:
         logo_goster()
         st.markdown("<h3 style='text-align: center;'>Yapay Zeka Üssü</h3>", unsafe_allow_html=True)
-        st.caption("v31.0 - Full Spectrum")
         st.divider()
-        # İŞTE BURASI: 3 KISIM + ÇIKIŞ
         menu = st.radio("Panel", ["💬 Hisse Sor / Analiz", "📡 Piyasa Radarı", "🌍 Global & Haber Odası", "Çıkış"])
         if menu == "Çıkış":
             st.session_state['giris_yapildi'] = False
@@ -289,14 +304,12 @@ def main():
     intel = GlobalIntel()
     tum_hisseler = get_live_tickers()
 
-    # --- 1. KISIM: MANUEL SORGU (Yazarak Sorulan) ---
     if menu == "💬 Hisse Sor / Analiz":
         st.title("💬 Hisse Analiz Asistanı")
         st.markdown("*Aklındaki hisseyi yaz, Yapay Zeka anlık olarak incelesin.*")
         
         c1, c2 = st.columns([3,1])
         with c1: 
-            # TEXT INPUT GERİ GELDİ
             sembol = st.text_input("Hisse Kodu (Örn: THYAO, SASA):", "").upper()
         with c2: 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -324,12 +337,22 @@ def main():
                         df = res['Data']
                         fig = go.Figure()
                         fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name="Fiyat"))
-                        fig.add_trace(go.Scatter(x=df.index, y=df['BBU_20_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
+                        
+                        # DİNAMİK KOLON BULMA (HATA DÜZELTME)
+                        # Bollinger
+                        bbu = next((c for c in df.columns if c.startswith('BBU')), None)
+                        bbl = next((c for c in df.columns if c.startswith('BBL')), None)
+                        if bbu and bbl:
+                            fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
+                            fig.add_trace(go.Scatter(x=df.index, y=df[bbl], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
+                        
                         fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange', width=2), name='VWAP'))
                         fig.add_trace(go.Scatter(x=df.index, y=df['ISA_9'], line=dict(color='green', width=1), name='Ichimoku A', visible='legendonly'))
                         
-                        psar_col = [c for c in df.columns if c.startswith('PSAR')][0]
-                        fig.add_trace(go.Scatter(x=df.index, y=df[psar_col], mode='markers', marker=dict(color='yellow', size=4), name='PSAR'))
+                        # PSAR
+                        psar_col = next((c for c in df.columns if c.startswith('PSAR')), None)
+                        if psar_col:
+                            fig.add_trace(go.Scatter(x=df.index, y=df[psar_col], mode='markers', marker=dict(color='yellow', size=4), name='PSAR'))
                         
                         fig.update_layout(template="plotly_dark", height=500, xaxis_rangeslider_visible=False, title=f"Veri Zamanı: {res['Tarih']}")
                         st.plotly_chart(fig, use_container_width=True)
@@ -425,11 +448,4 @@ def main():
         if news_list:
             for n in news_list:
                 st.markdown(f"#### 📰 [{n['Title']}]({n['Link']})")
-                st.caption(f"🗓️ {n['Date']}")
-                st.write("---")
-        else:
-            st.info("Haber akışı alınamadı.")
-
-if __name__ == "__main__":
-    main()
-    
+                st.caption(f"🗓️ {n['Da
