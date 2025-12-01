@@ -41,11 +41,9 @@ pwa_kodlari()
 # --- GÜVENLİK DUVARI ---
 def guvenlik_kontrolu():
     if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
-    
     if not st.session_state['giris_yapildi']:
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            st.markdown("<br><br>", unsafe_allow_html=True)
             logo_goster()
             st.markdown("<h4 style='text-align: center; color: #4CAF50;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
             st.divider()
@@ -125,36 +123,32 @@ class GlobalIntel:
         sentiment = 0
         news_display = [] # Sadece bugünün haberleri
         
-        # A. GENİŞ TARAMA (1 Yıllık Perspektif için Google Search simülasyonu)
-        # Google News RSS genelde son haberleri verir ama biz sorguyu genişletip 'Yıllık' kelimesini ekleyerek tarıyoruz
-        queries = [
-            f"{ticker} hisse kap",           # Güncel
-            f"{ticker} hisse yıllık rapor"   # Geçmiş/Genel
-        ]
+        queries = [f"{ticker} hisse kap", f"{ticker} hisse yorum"]
         
         for q in queries:
             url = f"https://news.google.com/rss/search?q={q}&hl=tr&gl=TR&ceid=TR:tr"
             try:
                 feed = feedparser.parse(url)
-                for entry in feed.entries[:10]: # Daha çok haber oku (Analiz için)
+                for entry in feed.entries[:10]: 
                     title = entry.title
                     date_struct = entry.published_parsed
                     
                     # Puanlama (Analiz Kısmı)
                     t_lower = title.lower()
                     for w in self.tech_keywords: 
-                        if w in t_lower: sentiment += 3 # İyi habere puan
+                        if w in t_lower: sentiment += 3 
                     for w in self.risk_keywords: 
-                        if w in t_lower: sentiment -= 3 # Kötü habere ceza
+                        if w in t_lower: sentiment -= 3 
                     
                     # Görüntüleme Filtresi (Sadece Bugün)
                     try:
-                        news_date = datetime(*date_struct[:6])
-                        today = datetime.now()
-                        # Eğer haber son 24 saat içindeyse listeye ekle
-                        if (today - news_date).days < 1:
-                            date_str = news_date.strftime("%H:%M")
-                            news_display.append({"Title": title, "Link": entry.link, "Date": date_str})
+                        if date_struct:
+                            news_date = datetime(*date_struct[:6])
+                            today = datetime.now()
+                            # Eğer haber son 24 saat içindeyse listeye ekle
+                            if (today - news_date).days < 1:
+                                date_str = news_date.strftime("%H:%M")
+                                news_display.append({"Title": title, "Link": entry.link, "Date": date_str})
                     except: pass
             except: pass
             
@@ -189,8 +183,6 @@ class TradingEngine:
         """Mum Formasyonları ve İkili Dip Tespiti"""
         patterns = []
         score_boost = 0
-        
-        # Son mumlar
         last = df.iloc[-1]
         prev = df.iloc[-2]
         
@@ -199,31 +191,29 @@ class TradingEngine:
         wick_up = last['High'] - max(last['Close'], last['Open'])
         wick_down = min(last['Close'], last['Open']) - last['Low']
         
-        # Hammer (Çekiç) - Dip Dönüşü
+        # Hammer (Çekiç)
         if wick_down > (body * 2) and wick_up < (body * 0.5):
-            patterns.append("Çekiç (Hammer) Formasyonu")
+            patterns.append("Çekiç (Hammer)")
             score_boost += 15
             
-        # Doji - Kararsızlık (Dönüş habercisi olabilir)
+        # Doji
         if body <= (last['High'] - last['Low']) * 0.1:
-            patterns.append("Doji (Kararsızlık/Dönüş)")
+            patterns.append("Doji (Kararsızlık)")
             score_boost += 5
             
-        # Bullish Engulfing (Yutan Boğa)
-        if prev['Close'] < prev['Open'] and last['Close'] > last['Open']: # Önce kırmızı sonra yeşil
+        # Yutan Boğa
+        if prev['Close'] < prev['Open'] and last['Close'] > last['Open']:
             if last['Close'] > prev['Open'] and last['Open'] < prev['Close']:
-                patterns.append("Yutan Boğa (Bullish Engulfing)")
+                patterns.append("Yutan Boğa (Engulfing)")
                 score_boost += 20
 
-        # 2. İkili Dip (Double Bottom) - Basitleştirilmiş
-        # Son 30 mumun en düşüklerini kontrol et
+        # 2. İkili Dip
         try:
             lows = df['Low'].tail(30).values
-            min1 = np.min(lows[:15]) # İlk yarının dibi
-            min2 = np.min(lows[15:]) # İkinci yarının dibi
-            # Dipler birbirine çok yakınsa (%2 fark) ve arada yükseliş varsa
+            min1 = np.min(lows[:15])
+            min2 = np.min(lows[15:])
             if abs(min1 - min2) / min1 < 0.02 and np.max(lows) > min1 * 1.05:
-                patterns.append("İkili Dip (Double Bottom)")
+                patterns.append("İkili Dip")
                 score_boost += 25
         except: pass
         
@@ -250,24 +240,17 @@ class TradingEngine:
                         df.iloc[-1, df.columns.get_loc('Low')] = min(live_price, df.iloc[-1]['Low'])
                         is_live = True
 
-            # --- İNDİKATÖRLER (AĞIR SİLAHLAR) ---
-            # 1. RSI
+            # --- İNDİKATÖRLER ---
             df['RSI'] = ta.rsi(df['Close'], length=14)
-            # 2. MACD
             macd = ta.macd(df['Close'])
             df = pd.concat([df, macd], axis=1)
-            # 3. Bollinger
             bb = ta.bbands(df['Close'], length=20)
             if bb is not None: df = pd.concat([df, bb], axis=1)
-            # 4. Keltner Kanalları (KC)
             kc = ta.kc(df['High'], df['Low'], df['Close'])
             if kc is not None: df = pd.concat([df, kc], axis=1)
-            # 5. Ichimoku
             ichimoku = ta.ichimoku(df['High'], df['Low'], df['Close'])[0]
             df = pd.concat([df, ichimoku], axis=1)
-            # 6. Net Hacim (OBV)
             df['OBV'] = ta.obv(df['Close'], df['Volume'])
-            # 7. VWAP & ATR
             df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
             df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
 
@@ -278,17 +261,14 @@ class TradingEngine:
             score = 50
             reasons = []
 
-            # Teknik Puanlar
             if last['Close'] > last['VWAP']: score += 10; reasons.append("Fiyat VWAP Üzerinde")
             if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al Sinyali")
             if last['RSI'] < 30: score += 20; reasons.append("RSI Aşırı Satım")
             elif last['RSI'] > 70: score -= 15; reasons.append("RSI Aşırı Alım")
             
-            # Ichimoku & Keltner
             if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: 
                 score += 10; reasons.append("Ichimoku Bulutu Üstünde")
             
-            # OBV (Hacim Akışı) Artıyorsa
             if df['OBV'].iloc[-1] > df['OBV'].iloc[-5]:
                 score += 10; reasons.append("Net Hacim (OBV) Artıyor")
 
@@ -301,8 +281,8 @@ class TradingEngine:
             news_data = []
             if mode == "PRO":
                 news_score, news_list = self.intel.analyze_news(ticker)
-                score += news_score # Geçmişi de kattık
-                news_data = news_list # Sadece bugünü göstereceğiz
+                score += news_score
+                news_data = news_list
                 if news_score > 0: reasons.append("Haber Akışı Pozitif (Yıllık Trend)")
             
             score = max(0, min(100, score))
@@ -323,7 +303,7 @@ class TradingEngine:
                 "Data": df, "Tarih": df.index[-1].strftime('%d %B %H:%M'),
                 "Is_Live": is_live, "Temel": temel, "Haberler": news_data
             }
-        except Exception as e: return None
+        except: return None
 
     def analyze_batch(self, tickers_list):
         results = []
@@ -380,7 +360,7 @@ def main():
             btn = st.button("ANALİZ ET 🔍", type="primary")
 
         if btn and sembol:
-            with st.spinner(f"{sembol} için Keltner, Ichimoku ve Formasyonlar taranıyor..."):
+            with st.spinner(f"{sembol} için formasyonlar, indikatörler ve haberler taranıyor..."):
                 res = engine.analyze(sembol, mode="PRO")
                 
                 if res:
@@ -445,4 +425,32 @@ def main():
             bar = st.progress(0)
             for i, chunk in enumerate(chunks):
                 batch_res = engine.analyze_batch(chunk)
-                all_res
+                all_results.extend(batch_res)
+                bar.progress((i + 1) / len(chunks))
+                time.sleep(1)
+            bar.empty()
+            if all_results:
+                df = pd.DataFrame(all_results)
+                st.success(f"Tarama Bitti! {len(df)} Fırsat Bulundu.")
+                st.dataframe(df.style.format({"Fiyat": "{:.2f}", "RSI": "{:.0f}"}).background_gradient(subset=['Skor'], cmap='RdYlGn'), use_container_width=True)
+            else: st.warning("Sinyal yok.")
+
+    elif menu == "🌍 Global & Haber Odası":
+        st.title("🌍 Dünya Piyasaları & Gündem")
+        indices = intel.get_global_indices()
+        if indices:
+            cols = st.columns(len(indices))
+            for i, (name, data) in enumerate(indices.items()):
+                cols[i].metric(label=name, value=f"{data['Fiyat']:.2f}", delta=f"%{data['Degisim']:.2f}")
+        st.divider()
+        st.markdown("### 🇹🇷 Türkiye & Ekonomi Gündemi")
+        _, news_list = intel.analyze_news("GENEL") 
+        if news_list:
+            for n in news_list:
+                st.markdown(f"#### 📰 [{n['Title']}]({n['Link']})")
+                st.caption(f"🗓️ {n['Date']}")
+                st.write("---")
+        else: st.info("Haber akışı alınamadı.")
+
+if __name__ == "__main__":
+    main()
