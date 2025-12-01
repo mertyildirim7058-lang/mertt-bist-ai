@@ -45,7 +45,7 @@ def guvenlik_kontrolu():
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
             logo_goster()
-            st.markdown("<h4 style='text-align: center; color: #4CAF50;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align: center;'>Gelecek İçin Bilgi ve Teknoloji</h4>", unsafe_allow_html=True)
             st.divider()
             sifre = st.text_input("Kuantum Erişim Anahtarı:", type="password")
             if st.button("Sisteme Bağlan", type="primary", use_container_width=True):
@@ -53,25 +53,25 @@ def guvenlik_kontrolu():
                     if sifre == st.secrets["GIRIS_SIFRESI"]: 
                         st.session_state['giris_yapildi'] = True
                         st.rerun()
-                    else: st.error("⛔ Yetkisiz Erişim Denemesi!")
+                    else: st.error("⛔ Yetkisiz Erişim!")
                 except: st.error("Sistem Hatası: Şifre tanımlı değil.")
         return False
     return True
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- MOTORLAR ---
-
-# 1. CANLI LİSTE
+# --- 3 KATMANLI LİSTE ÇEKİCİ (ASLA ÇÖKMEZ) ---
 @st.cache_data(ttl=600)
 def get_live_tickers():
     canli_liste = []
+    
+    # 1. İş Yatırım'dan Çekmeyi Dene
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.content, 'html.parser')
             table = soup.find('table', {'id': 'tableHisseOnerileri'})
             if table:
                 rows = table.find('tbody').find_all('tr')
@@ -79,7 +79,68 @@ def get_live_tickers():
                     cols = row.find_all('td')
                     if cols: canli_liste.append(cols[0].find('a').text.strip())
     except: pass
-    return sorted(list(set(canli_liste)))
+    
+    if len(canli_liste) > 50: return sorted(list(set(canli_liste)))
+
+    # 2. Kurtarıcı Liste (BIST 100 Güncel)
+    # Site çökerse bu liste devreye girer
+    backup_list = [
+        "A1CAP", "ACSEL", "ADEL", "ADESE", "AEFES", "AFYON", "AGESA", "AGHOL", "AGROT", "AGYO",
+        "AHGAZ", "AKBNK", "AKCNS", "AKENR", "AKFGY", "AKFYE", "AKGRT", "AKMGY", "AKSA", "AKSEN",
+        "AKSGY", "AKSUE", "AKYHO", "ALARK", "ALBRK", "ALCAR", "ALCTL", "ALFAS", "ALGYO", "ALKA",
+        "ALKIM", "ALMAD", "ALTNY", "ALVES", "ANELE", "ANGEN", "ANHYT", "ANSGR", "ARASE", "ARCLK",
+        "ARDYZ", "ARENA", "ARSAN", "ARTMS", "ARZUM", "ASELS", "ASGYO", "ASTOR", "ASUZU", "ATAGY",
+        "ATAKP", "ATATP", "ATEKS", "ATLAS", "ATSYH", "AVGYO", "AVHOL", "AVOD", "AVPGY", "AVTUR",
+        "AYCES", "AYDEM", "AYEN", "AYES", "AYGAZ", "AZTEK", "BAGFS", "BAKAB", "BALAT", "BANVT",
+        "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BEYAZ", "BFREN", "BIENY", "BIGCH",
+        "BIMAS", "BINHO", "BIOEN", "BIZIM", "BJKAS", "BLCYT", "BMSCH", "BMSTL", "BNTAS", "BOBET",
+        "BORLS", "BOSSA", "BRISA", "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN", "BRYAT",
+        "BSOKE", "BTCIM", "BUCIM", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CATES", "CCOLA",
+        "CELHA", "CEMAS", "CEMTS", "CEOEM", "CIMSA", "CLEBI", "CMBTN", "CMENT", "CONSE", "COSMO",
+        "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGHL", "DAGI", "DAPGM", "DARDL", "DATA",
+        "DATES", "DDRKM", "DELEG", "DEMISA", "DERHL", "DERIM", "DESA", "DESPC", "DEVA", "DGATE",
+        "DGGYO", "DGNMO", "DIRIT", "DITAS", "DMSAS", "DNISI", "DOAS", "DOBUR", "DOCO", "DOGUB",
+        "DOHOL", "DOKTA", "DURDO", "DYOBY", "DZGYO", "EBEBK", "ECILC", "EPLAS", "ECZYT", "EDATA",
+        "EDIP", "EGEEN", "EGEPO", "EGGUB", "EGPRO", "EGSER", "EKGYO", "EKIZ", "EKSUN", "ELITE",
+        "EMKEL", "EMNIS", "ENJSA", "ENKAI", "ENSRI", "ENTRA", "ENVER", "EPLAS", "ERBOS", "ERCB",
+        "EREGL", "ERSU", "ESCAR", "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO", "EUPWR",
+        "EUREN", "EUYO", "FADE", "FENE", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE", "FRIGO",
+        "FROTO", "FZLGY", "GARAN", "GARFA", "GEDIK", "GEDZA", "GENIL", "GENTS", "GEREL", "GESAN",
+        "GLBMD", "GLCVY", "GLRYH", "GLYHO", "GMTAS", "GOKNR", "GOLTS", "GOODY", "GOZDE", "GRNYO",
+        "GRSEL", "GSDDE", "GSDHO", "GSRAY", "GUBRF", "GWIND", "GZNMI", "HALKB", "HATEK", "HDFGS",
+        "HEDEF", "HEKTS", "HKTM", "HLGYO", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ", "ICBCT",
+        "IDEAS", "IDGYO", "IEYHO", "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY", "IMASM",
+        "INDES", "INFO", "INGRM", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR", "ISCTR",
+        "ISDMR", "ISFIN", "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT", "ITTFH",
+        "IZENR", "IZFAS", "IZINV", "IZMDC", "JANTS", "KAPLM", "KARYE", "KARSN", "KARTN", "KARYE",
+        "KATMR", "KAYSE", "KCAER", "KCMKW", "KDOAS", "KFEIN", "KGYO", "KBORU", "KIMMR", "KLGYO",
+        "KLKIM", "KLMSN", "KLNMA", "KLRHO", "KLSYN", "KMPUR", "KNFRT", "KONKA", "KONTR", "KONYA",
+        "KOPOL", "KORDS", "KOZAA", "KOZAL", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT", "KRPLS",
+        "KRSTL", "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS", "KZBGY",
+        "KZGYO", "LIDER", "LIDFA", "LINK", "LKMNH", "LOGO", "LRSHO", "LUKSK", "MAALT", "MACKO",
+        "MAGEN", "MAKIM", "MAKTK", "MANAS", "MARBL", "MARKA", "MARTI", "MAVI", "MEDTR", "MEGAP",
+        "MEGMT", "MEKAG", "MNDRS", "MENBA", "MERCN", "MERIT", "MERKO", "METUR", "MGROS", "MIATK",
+        "MIPAZ", "MMCAS", "MNDTR", "MOBTL", "MOGAN", "MONDU", "MPARK", "MRGYO", "MRSHL", "MSGYO",
+        "MTRKS", "MTRYO", "MUNDA", "NATA", "NETAS", "NIBAS", "NTGAZ", "NTHOL", "NUGYO", "NUHCM",
+        "OBAMS", "OBASE", "ODAS", "ODINE", "OFSYM", "ONCSM", "ORCAY", "ORGE", "ORMA", "OSMEN",
+        "OSTIM", "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZGYO", "OZKGY", "OZRDN",
+        "OZSUB", "PAGYO", "PAMEL", "PAPIL", "PARSN", "PASEU", "PCILT", "PEGYO", "PEKGY", "PENGD",
+        "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART", "PKENT", "PLAT", "PNLSN", "PNSUT",
+        "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA", "PSDTC", "PSGYO", "QNBFB", "QNBFL",
+        "QUAGR", "RALYH", "RAYSG", "RNPOL", "REEDR", "RHEAG", "RODRG", "ROYAL", "RTALB", "RUBNS",
+        "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL", "SANFM", "SANKO", "SARKY", "SARTN",
+        "SASA", "SAYAS", "SDTTR", "SEKFK", "SEKUR", "SELEC", "SELGD", "SELVA", "SEYKM", "SILVR",
+        "SISE", "SKBNK", "SKTAS", "SMART", "SMRTG", "SNAET", "SNPAM", "SNGYO", "SNKRN", "SOKE",
+        "SOKM", "SONME", "SRVGY", "SUMAS", "SUNGW", "SURGY", "SUWEN", "TABGD", "TARKM", "TATEN",
+        "TATGD", "TAVHL", "TBORG", "TCELL", "TDGYO", "TEKTU", "TERA", "TETMT", "TEZOL", "TGSAS",
+        "THYAO", "TKFEN", "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRCAS", "TRGYO",
+        "TRILC", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK", "TUCLK", "TUKAS", "TUPRS", "TUREX",
+        "TURGG", "TURSG", "UFUK", "ULAS", "ULKER", "ULUFA", "ULUSE", "ULUUN", "UMPAS", "UNLU",
+        "USAK", "UZERB", "VAKBN", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE", "VESTL",
+        "VKFYO", "VKGYO", "VKING", "VRGYO", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL", "YGGYO",
+        "YGYO", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZOREN", "ZRGYO"
+    ]
+    return sorted(list(set(backup_list)))
 
 # 2. CANLI FİYAT
 def get_realtime_price(ticker):
@@ -99,70 +160,71 @@ class GlobalIntel:
     def __init__(self):
         self.risk_keywords = ['savaş', 'kriz', 'çöküş', 'enflasyon', 'faiz', 'gerilim', 'yaptırım', 'ceza', 'zarar', 'satış']
         self.tech_keywords = ['yapay zeka', 'rekor', 'büyüme', 'anlaşma', 'onay', 'ihracat', 'yatırım', 'temettü', 'kar', 'bedelsiz']
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
 
     def get_global_indices(self):
-        indices = {"S&P 500": "^GSPC", "Altın": "GC=F", "Bitcoin": "BTC-USD", "Dolar": "TRY=X"}
+        indices = {"S&P 500": "^GSPC", "Altın": "GC=F", "Bitcoin": "BTC-USD", "Dolar": "TRY=X", "Petrol": "BZ=F"}
         data = {}
         try:
             df = yf.download(" ".join(indices.values()), period="5d", interval="15m", progress=False)['Close'].ffill().bfill()
             for name, symbol in indices.items():
                 try:
-                    price = df[symbol].iloc[-1]
-                    prev = df[symbol].iloc[-2]
+                    price = df[symbol].dropna().iloc[-1]
+                    prev = df[symbol].dropna().iloc[-2]
                     change = ((price - prev) / prev) * 100
-                    data[name] = {"Fiyat": price, "Degisim": change}
-                except: data[name] = {"Fiyat": 0.0, "Degisim": 0.0}
+                    fmt = "%.0f" if "Bitcoin" in name else "%.2f"
+                    data[name] = {"Fiyat": price, "Degisim": change, "Fmt": fmt}
+                except: data[name] = {"Fiyat": 0.0, "Degisim": 0.0, "Fmt": "%.2f"}
         except: pass
         return data
 
-    def analyze_news(self, ticker):
-        """
-        1. Bugünü Göster (Display)
-        2. Geçmişi Analiz Et (Score)
-        """
+    def analyze_news(self, query_type="GENEL", ticker=""):
         sentiment = 0
-        news_display = [] # Sadece bugünün haberleri
+        news_display = []
         
-        queries = [f"{ticker} hisse kap", f"{ticker} hisse yorum"]
-        
-        for q in queries:
-            url = f"https://news.google.com/rss/search?q={q}&hl=tr&gl=TR&ceid=TR:tr"
-            try:
-                feed = feedparser.parse(url)
-                for entry in feed.entries[:10]: 
-                    title = entry.title
-                    date_struct = entry.published_parsed
-                    
-                    # Puanlama (Analiz Kısmı)
-                    t_lower = title.lower()
-                    for w in self.tech_keywords: 
-                        if w in t_lower: sentiment += 3 
-                    for w in self.risk_keywords: 
-                        if w in t_lower: sentiment -= 3 
-                    
-                    # Görüntüleme Filtresi (Sadece Bugün)
-                    try:
-                        if date_struct:
-                            news_date = datetime(*date_struct[:6])
-                            today = datetime.now()
-                            # Eğer haber son 24 saat içindeyse listeye ekle
-                            if (today - news_date).days < 1:
-                                date_str = news_date.strftime("%H:%M")
-                                news_display.append({"Title": title, "Link": entry.link, "Date": date_str})
-                    except: pass
-            except: pass
+        # Kaynak Çeşitliliği (Yedekli)
+        feeds = []
+        if query_type == "HISSE":
+            feeds = [f"https://news.google.com/rss/search?q={ticker}+hisse+kap&hl=tr&gl=TR&ceid=TR:tr",
+                     f"https://news.google.com/rss/search?q={ticker}+borsa&hl=tr&gl=TR&ceid=TR:tr"]
+        else:
+            feeds = ["https://news.google.com/rss/search?q=Türkiye+Ekonomi+Borsa&hl=tr&gl=TR&ceid=TR:tr",
+                     "https://www.trthaber.com/xml/ekonomi.xml"]
             
-        # Tekrarları temizle
-        unique_display = []
+        for url in feeds:
+            try:
+                r = requests.get(url, headers=self.headers, timeout=5)
+                if r.status_code == 200:
+                    feed = feedparser.parse(r.content)
+                    for entry in feed.entries[:8]: 
+                        title = entry.title
+                        link = entry.link
+                        try:
+                            if hasattr(entry, 'published_parsed'):
+                                news_date = datetime(*entry.published_parsed[:6])
+                                today = datetime.now()
+                                if (today - news_date).days <= 7:
+                                    date_str = news_date.strftime("%d.%m")
+                                    t_lower = title.lower()
+                                    impact = "Nötr"; color = "gray"
+                                    score_delta = 0
+                                    for w in self.tech_keywords: 
+                                        if w in t_lower: score_delta += 2; impact = "Pozitif"; color = "green"
+                                    for w in self.risk_keywords: 
+                                        if w in t_lower: score_delta -= 3; impact = "Negatif"; color = "red"
+                                    
+                                    sentiment += score_delta
+                                    news_display.append({"Title": title, "Link": link, "Date": date_str, "Impact": impact, "Color": color})
+                        except: pass
+            except: pass
+        
+        unique = []
         seen = set()
         for n in news_display:
-            if n['Title'] not in seen:
-                unique_display.append(n)
-                seen.add(n['Title'])
-                
-        return max(-25, min(25, sentiment)), unique_display
+            if n['Title'] not in seen: unique.append(n); seen.add(n['Title'])
+        return max(-20, min(20, sentiment)), unique[:15]
 
-# --- 4. KUANTUM ANALİZ MOTORU ---
+# --- 4. ANALİZ MOTORU ---
 class TradingEngine:
     def __init__(self):
         try: from sklearn.preprocessing import StandardScaler
@@ -180,43 +242,24 @@ class TradingEngine:
         except: return None
 
     def detect_patterns(self, df):
-        """Mum Formasyonları ve İkili Dip Tespiti"""
         patterns = []
         score_boost = 0
         last = df.iloc[-1]
         prev = df.iloc[-2]
-        
-        # 1. Mum Formasyonları
         body = abs(last['Close'] - last['Open'])
         wick_up = last['High'] - max(last['Close'], last['Open'])
         wick_down = min(last['Close'], last['Open']) - last['Low']
         
-        # Hammer (Çekiç)
-        if wick_down > (body * 2) and wick_up < (body * 0.5):
-            patterns.append("Çekiç (Hammer)")
-            score_boost += 15
-            
-        # Doji
-        if body <= (last['High'] - last['Low']) * 0.1:
-            patterns.append("Doji (Kararsızlık)")
-            score_boost += 5
-            
-        # Yutan Boğa
+        if wick_down > (body * 2) and wick_up < (body * 0.5): patterns.append("Çekiç (Hammer)"); score_boost += 15
+        if body <= (last['High'] - last['Low']) * 0.1: patterns.append("Doji (Kararsızlık)"); score_boost += 5
         if prev['Close'] < prev['Open'] and last['Close'] > last['Open']:
-            if last['Close'] > prev['Open'] and last['Open'] < prev['Close']:
-                patterns.append("Yutan Boğa (Engulfing)")
-                score_boost += 20
-
-        # 2. İkili Dip
+            if last['Close'] > prev['Open'] and last['Open'] < prev['Close']: patterns.append("Yutan Boğa"); score_boost += 20
+        
         try:
             lows = df['Low'].tail(30).values
-            min1 = np.min(lows[:15])
-            min2 = np.min(lows[15:])
-            if abs(min1 - min2) / min1 < 0.02 and np.max(lows) > min1 * 1.05:
-                patterns.append("İkili Dip")
-                score_boost += 25
+            min1 = np.min(lows[:15]); min2 = np.min(lows[15:])
+            if abs(min1 - min2) / min1 < 0.02 and np.max(lows) > min1 * 1.05: patterns.append("İkili Dip"); score_boost += 25
         except: pass
-        
         return patterns, score_boost
 
     def analyze(self, ticker, mode="PRO"):
@@ -236,11 +279,8 @@ class TradingEngine:
                 if live_price and live_price > 0:
                     if abs(live_price - df.iloc[-1]['Close']) / df.iloc[-1]['Close'] < 0.20:
                         df.iloc[-1, df.columns.get_loc('Close')] = live_price
-                        df.iloc[-1, df.columns.get_loc('High')] = max(live_price, df.iloc[-1]['High'])
-                        df.iloc[-1, df.columns.get_loc('Low')] = min(live_price, df.iloc[-1]['Low'])
                         is_live = True
 
-            # --- İNDİKATÖRLER ---
             df['RSI'] = ta.rsi(df['Close'], length=14)
             macd = ta.macd(df['Close'])
             df = pd.concat([df, macd], axis=1)
@@ -257,36 +297,28 @@ class TradingEngine:
             last = df.iloc[-1]
             if pd.isna(last['RSI']): return None
 
-            # --- PUANLAMA ---
             score = 50
             reasons = []
-
             if last['Close'] > last['VWAP']: score += 10; reasons.append("Fiyat VWAP Üzerinde")
             if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al Sinyali")
             if last['RSI'] < 30: score += 20; reasons.append("RSI Aşırı Satım")
             elif last['RSI'] > 70: score -= 15; reasons.append("RSI Aşırı Alım")
-            
-            if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: 
-                score += 10; reasons.append("Ichimoku Bulutu Üstünde")
-            
-            if df['OBV'].iloc[-1] > df['OBV'].iloc[-5]:
-                score += 10; reasons.append("Net Hacim (OBV) Artıyor")
+            if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: score += 10; reasons.append("Ichimoku Bulutu Üstünde")
+            if df['OBV'].iloc[-1] > df['OBV'].iloc[-5]: score += 10; reasons.append("Net Hacim (OBV) Artıyor")
 
-            # FORMASYON ANALİZİ
             patterns, pat_score = self.detect_patterns(df)
             score += pat_score
             for p in patterns: reasons.append(f"Formasyon: {p}")
 
-            # Haber Analizi
             news_data = []
             if mode == "PRO":
-                news_score, news_list = self.intel.analyze_news(ticker)
+                news_score, news_list = self.intel.analyze_news("HISSE", ticker)
                 score += news_score
                 news_data = news_list
-                if news_score > 0: reasons.append("Haber Akışı Pozitif (Yıllık Trend)")
+                if news_score > 0: reasons.append("Haber Akışı Pozitif")
+                elif news_score < 0: reasons.append("Haber Akışı Negatif")
             
             score = max(0, min(100, score))
-            
             signal, color = "NÖTR / İZLE", "gray"
             if score >= 80: signal, color = "GÜÇLÜ AL 🚀", "green"
             elif score >= 60: signal, color = "AL 🌱", "blue"
@@ -327,11 +359,9 @@ class TradingEngine:
                     score = 50
                     if rsi.iloc[-1] < 45 and last_close > vwap.iloc[-1]: score = 85
                     elif rsi.iloc[-1] > 70: score = 20
-                    
                     signal = "NÖTR"
                     if score >= 80: signal = "GÜÇLÜ AL"
                     elif score <= 30: signal = "SAT"
-                    
                     if signal != "NÖTR":
                         results.append({"Hisse": ticker, "Fiyat": last_close, "Sinyal": signal, "RSI": last_rsi, "Skor": int(score)})
                 except: continue
@@ -342,7 +372,6 @@ class TradingEngine:
 def main():
     with st.sidebar:
         logo_goster()
-        st.markdown("<h3 style='text-align: center;'>Yapay Zeka Üssü</h3>", unsafe_allow_html=True)
         st.divider()
         menu = st.radio("Panel", ["💬 Hisse Sor / Analiz", "📡 Piyasa Radarı", "🌍 Global & Haber Odası", "Çıkış"])
         if menu == "Çıkış": st.session_state['giris_yapildi'] = False; st.rerun()
@@ -354,15 +383,14 @@ def main():
     if menu == "💬 Hisse Sor / Analiz":
         st.title("💬 Hisse Analiz Asistanı")
         c1, c2 = st.columns([3,1])
-        with c1: sembol = st.text_input("Hisse Kodu (Örn: THYAO):", "").upper()
+        with c1: sembol = st.text_input("Hisse Kodu:", "").upper()
         with c2: 
             st.markdown("<br>", unsafe_allow_html=True)
             btn = st.button("ANALİZ ET 🔍", type="primary")
 
         if btn and sembol:
-            with st.spinner(f"{sembol} için formasyonlar, indikatörler ve haberler taranıyor..."):
+            with st.spinner(f"{sembol} analiz ediliyor..."):
                 res = engine.analyze(sembol, mode="PRO")
-                
                 if res:
                     k1, k2, k3, k4 = st.columns(4)
                     k1.metric("Fiyat", f"{res['Fiyat']:.2f} TL", delta="Canlı" if res['Is_Live'] else "Gecikmeli")
@@ -370,49 +398,33 @@ def main():
                     k3.metric("Karar", res['Sinyal'])
                     temel = res['Temel']
                     k4.metric("Temel", f"F/K: {temel['FK']}")
-                    
                     st.divider()
-                    
                     col_g, col_d = st.columns([2, 1])
                     with col_g:
-                        st.subheader(f"📊 {sembol} Teknik Grafik")
-                        df = res['Data']
                         fig = go.Figure()
-                        fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name="Fiyat"))
-                        
-                        # Bollinger
-                        bbu = next((c for c in df.columns if c.startswith('BBU')), None)
-                        bbl = next((c for c in df.columns if c.startswith('BBL')), None)
-                        if bbu: fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
-                        
-                        # Keltner (Mor)
-                        kcu = next((c for c in df.columns if c.startswith('KCU')), None)
-                        if kcu: fig.add_trace(go.Scatter(x=df.index, y=df[kcu], line=dict(color='purple', width=1), name='Keltner', visible='legendonly'))
-
-                        fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange', width=2), name='VWAP'))
-                        fig.add_trace(go.Scatter(x=df.index, y=df['ISA_9'], line=dict(color='green', width=1), name='Ichimoku A', visible='legendonly'))
-                        
+                        fig.add_trace(go.Candlestick(x=res['Data'].index, open=res['Data']['Open'], high=res['Data']['High'], low=res['Data']['Low'], close=res['Data']['Close'], name="Fiyat"))
+                        bbu = next((c for c in res['Data'].columns if c.startswith('BBU')), None)
+                        if bbu: fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data'][bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
+                        kcu = next((c for c in res['Data'].columns if c.startswith('KCU')), None)
+                        if kcu: fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data'][kcu], line=dict(color='purple', width=1), name='Keltner', visible='legendonly'))
                         fig.update_layout(template="plotly_dark", height=500, xaxis_rangeslider_visible=False, title=f"Veri Zamanı: {res['Tarih']}")
                         st.plotly_chart(fig, use_container_width=True)
-                        
                     with col_d:
-                        st.subheader("🧠 Yapay Zeka Raporu")
+                        st.subheader("🧠 Yapay Zeka")
                         if res['Renk'] == 'green': st.success(f"**{res['Sinyal']}**")
                         else: st.warning(f"**{res['Sinyal']}**")
                         st.info(f"Hedef: {res['Hedef']:.2f}")
                         st.error(f"Stop: {res['Stop']:.2f}")
-                        
-                        st.write("#### 📝 Tespitler")
+                        st.write("#### 📝 Nedenler")
                         for y in res['Yorumlar']: st.markdown(f"✅ {y}")
-
                     st.markdown("---")
-                    st.subheader(f"📰 {sembol} İçin Günün Haberleri")
+                    st.subheader(f"📰 {sembol} Haberleri")
                     if res['Haberler']:
                         for n in res['Haberler']:
-                            st.markdown(f"🔹 **[{n['Title']}]({n['Link']})** - *{n['Date']}*")
-                    else: st.info("Bugün için bu hisseye ait özel bir haber bulunamadı.")
-
-                else: st.error("Hisse bulunamadı veya veri yok.")
+                            color = "🟢" if n['Impact'] == "Pozitif" else "🔴" if n['Impact'] == "Negatif" else "⚪"
+                            st.markdown(f"{color} **[{n['Title']}]({n['Link']})** - *{n['Date']}*")
+                    else: st.info("Haber yok.")
+                else: st.error("Veri yok.")
 
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
