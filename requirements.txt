@@ -6,7 +6,10 @@ xgboost
 requests
 beautifulsoup4
 plotly
+feedparser
+Pillow
 lxml
 openpyxl
 scikit-learn
 matplotlib
+numpy
