@@ -401,7 +401,7 @@ def main():
                         bbu = next((c for c in df.columns if c.startswith('BBU')), None)
                         bbl = next((c for c in df.columns if c.startswith('BBL')), None)
                         if bbu and bbl:
-                                      fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
+                           fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
                             fig.add_trace(go.Scatter(x=df.index, y=df[bbl], line=dict(color='gray', width=1, dash='dot'), name='Bollinger', visible='legendonly'))
                         
                         fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange', width=2), name='VWAP'))
@@ -444,7 +444,7 @@ def main():
         st.title("📡 MERTT Piyasa Radarı")
         
         if not tum_hisseler:
-            st.error("⚠️ Liste çekilemedi. Bağlantı yok.")
+            st.error("⚠️ Liste çekilemedi.")
             st.stop()
             
         st.info(f"Takipteki Hisse Sayısı: {len(tum_hisseler)}")
