@@ -409,7 +409,7 @@ def main():
             for i, (name, data) in enumerate(indices.items()):
                 cols[i].metric(label=name, value=f"{data['Fiyat']:.2f}", delta=f"%{data['Degisim']:.2f}")
         st.divider()
-        st.markdown("### 🇹🇷 Türkiye & Ek
+        st.markdown("### 🇹🇷 Türkiye & Ekonomi Gündemi")
         _, news_list = intel.analyze_news("GENEL") 
         if news_list:
             for n in news_list:
