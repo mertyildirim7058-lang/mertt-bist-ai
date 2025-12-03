@@ -25,7 +25,7 @@ st.set_page_config(
 
 def logo_goster():
     try: st.image("logo.png", use_container_width=True)
-    except: 
+    except:
         try: st.image(LOGO_INTERNET_LINKI, use_container_width=True)
         except: st.header("🦅 MERTT AI")
 
@@ -70,91 +70,92 @@ def get_backup_list():
         "ALKIM", "ALMAD", "ALTNY", "ALVES", "ANELE", "ANGEN", "ANHYT", "ANSGR", "ARASE", "ARCLK",
         "ARDYZ", "ARENA", "ARSAN", "ARTMS", "ARZUM", "ASELS", "ASGYO", "ASTOR", "ASUZU", "ATAGY",
         "ATAKP", "ATATP", "ATEKS", "ATLAS", "ATSYH", "AVGYO", "AVHOL", "AVOD", "AVPGY", "AVTUR",
-        "AYCES", "AYDEM", "AYEN", "AYES", "AYGAZ", "AZTEK", "BAGFS", "BAKAB", "BALAT", "BANVT",
-        "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BEYAZ", "BFREN", "BIENY", "BIGCH",
-        "BIMAS", "BINHO", "BIOEN", "BIZIM", "BJKAS", "BLCYT", "BMSCH", "BMSTL", "BNTAS", "BOBET",
-        "BORLS", "BOSSA", "BRISA", "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN", "BRYAT",
-        "BSOKE", "BTCIM", "BUCIM", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CATES", "CCOLA",
-        "CELHA", "CEMAS", "CEMTS", "CEOEM", "CIMSA", "CLEBI", "CMBTN", "CMENT", "CONSE", "COSMO",
-        "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGHL", "DAGI", "DAPGM", "DARDL", "DATA",
-        "DATES", "DDRKM", "DELEG", "DEMISA", "DERHL", "DERIM", "DESA", "DESPC", "DEVA", "DGATE",
-        "DGGYO", "DGNMO", "DIRIT", "DITAS", "DMSAS", "DNISI", "DOAS", "DOBUR", "DOCO", "DOGUB",
-        "DOHOL", "DOKTA", "DURDO", "DYOBY", "DZGYO", "EBEBK", "ECILC", "EPLAS", "ECZYT", "EDATA",
-        "EDIP", "EGEEN", "EGEPO", "EGGUB", "EGPRO", "EGSER", "EKGYO", "EKIZ", "EKSUN", "ELITE",
-        "EMKEL", "EMNIS", "ENJSA", "ENKAI", "ENSRI", "ENTRA", "ENVER", "EPLAS", "ERBOS", "ERCB",
-        "EREGL", "ERSU", "ESCAR", "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO", "EUPWR",
-        "EUREN", "EUYO", "FADE", "FENE", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE", "FRIGO",
-        "FROTO", "FZLGY", "GARAN", "GARFA", "GEDIK", "GEDZA", "GENIL", "GENTS", "GEREL", "GESAN",
-        "GLBMD", "GLCVY", "GLRYH", "GLYHO", "GMTAS", "GOKNR", "GOLTS", "GOODY", "GOZDE", "GRNYO",
-        "GRSEL", "GSDDE", "GSDHO", "GSRAY", "GUBRF", "GWIND", "GZNMI", "HALKB", "HATEK", "HDFGS",
-        "HEDEF", "HEKTS", "HKTM", "HLGYO", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ", "ICBCT",
-        "IDEAS", "IDGYO", "IEYHO", "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY", "IMASM",
-        "INDES", "INFO", "INGRM", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR", "ISCTR",
-        "ISDMR", "ISFIN", "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT", "ITTFH",
-        "IZENR", "IZFAS", "IZINV", "IZMDC", "JANTS", "KAPLM", "KARYE", "KARSN", "KARTN", "KARYE",
-        "KATMR", "KAYSE", "KCAER", "KCMKW", "KDOAS", "KFEIN", "KGYO", "KBORU", "KIMMR", "KLGYO",
-        "KLKIM", "KLMSN", "KLNMA", "KLRHO", "KLSYN", "KMPUR", "KNFRT", "KONKA", "KONTR", "KONYA",
-        "KOPOL", "KORDS", "KOZAA", "KOZAL", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT", "KRPLS",
-        "KRSTL", "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS", "KZBGY",
-        "KZGYO", "LIDER", "LIDFA", "LINK", "LKMNH", "LOGO", "LRSHO", "LUKSK", "MAALT", "MACKO",
-        "MAGEN", "MAKIM", "MAKTK", "MANAS", "MARBL", "MARKA", "MARTI", "MAVI", "MEDTR", "MEGAP",
-        "MEGMT", "MEKAG", "MNDRS", "MENBA", "MERCN", "MERIT", "MERKO", "METUR", "MGROS", "MIATK",
-        "MIPAZ", "MMCAS", "MNDTR", "MOBTL", "MOGAN", "MONDU", "MPARK", "MRGYO", "MRSHL", "MSGYO",
-        "MTRKS", "MTRYO", "MUNDA", "NATA", "NETAS", "NIBAS", "NTGAZ", "NTHOL", "NUGYO", "NUHCM",
-        "OBAMS", "OBASE", "ODAS", "ODINE", "OFSYM", "ONCSM", "ORCAY", "ORGE", "ORMA", "OSMEN",
-        "OSTIM", "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZGYO", "OZKGY", "OZRDN",
-        "OZSUB", "PAGYO", "PAMEL", "PAPIL", "PARSN", "PASEU", "PCILT", "PEGYO", "PEKGY", "PENGD",
-        "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART", "PKENT", "PLAT", "PNLSN", "PNSUT",
-        "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA", "PSDTC", "PSGYO", "QNBFB", "QNBFL",
-        "QUAGR", "RALYH", "RAYSG", "RNPOL", "REEDR", "RHEAG", "RODRG", "ROYAL", "RTALB", "RUBNS",
-        "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL", "SANFM", "SANKO", "SARKY", "SARTN",
-        "SASA", "SAYAS", "SDTTR", "SEKFK", "SEKUR", "SELEC", "SELGD", "SELVA", "SEYKM", "SILVR",
-        "SISE", "SKBNK", "SKTAS", "SMART", "SMRTG", "SNAET", "SNPAM", "SNGYO", "SNKRN", "SOKE",
-        "SOKM", "SONME", "SRVGY", "SUMAS", "SUNGW", "SURGY", "SUWEN", "TABGD", "TARKM", "TATEN",
-        "TATGD", "TAVHL", "TBORG", "TCELL", "TDGYO", "TEKTU", "TERA", "TETMT", "TEZOL", "TGSAS",
-        "THYAO", "TKFEN", "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRCAS", "TRGYO",
-        "TRILC", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK", "TUCLK", "TUKAS", "TUPRS", "TUREX",
-        "TURGG", "TURSG", "UFUK", "ULAS", "ULKER", "ULUFA", "ULUSE", "ULUUN", "UMPAS", "UNLU",
-        "USAK", "UZERB", "VAKBN", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE", "VESTL",
-        "VKFYO", "VKGYO", "VKING", "VRGYO", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL", "YGGYO",
-        "YGYO", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZOREN", "ZRGYO"
+        "AYCES", "AYDEM", "AYEN", "AYES", "AYGAZ", "AZTEK", "BABA", "BAGFS", "BAKAB", "BALAT",
+        "BANVT", "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BEYAZ", "BFREN", "BIENY",
+        "BIGCH", "BIMAS", "BINHO", "BIOEN", "BIZIM", "BJKAS", "BLCYT", "BMSCH", "BMSTL", "BNTAS",
+        "BOBET", "BORLS", "BOSSA", "BRISA", "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN",
+        "BRYAT", "BSOKE", "BTCIM", "BUCIM", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CATES",
+        "CCOLA", "CELHA", "CEMAS", "CEMTS", "CEOEM", "CIMSA", "CLEBI", "CMBTN", "CMENT", "CONSE",
+        "COSMO", "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGHL", "DAGI", "DAPGM", "DARDL",
+        "DATA", "DATES", "DDRKM", "DELEG", "DEMISA", "DERHL", "DERIM", "DESA", "DESPC", "DEVA",
+        "DGATE", "DGGYO", "DGNMO", "DIRIT", "DITAS", "DMSAS", "DNISI", "DOAS", "DOBUR", "DOCO",
+        "DOGUB", "DOHOL", "DOKTA", "DURDO", "DYOBY", "DZGYO", "EBEBK", "ECILC", "EPLAS", "ECZYT",
+        "EDATA", "EDIP", "EGEEN", "EGEPO", "EGGUB", "EGPRO", "EGSER", "EKGYO", "EKIZ", "EKSUN",
+        "ELITE", "EMKEL", "EMNIS", "ENJSA", "ENKAI", "ENSRI", "ENTRA", "ENVER", "EPLAS", "ERBOS",
+        "ERCB", "EREGL", "ERSU", "ESCAR", "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO",
+        "EUPWR", "EUREN", "EUYO", "FADE", "FENE", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE",
+        "FRIGO", "FROTO", "FZLGY", "GARAN", "GARFA", "GEDIK", "GEDZA", "GENIL", "GENTS", "GEREL",
+        "GESAN", "GLBMD", "GLCVY", "GLRYH", "GLYHO", "GMTAS", "GOKNR", "GOLTS", "GOODY", "GOZDE",
+        "GRNYO", "GRSEL", "GSDDE", "GSDHO", "GSRAY", "GUBRF", "GWIND", "GZNMI", "HALKB", "HATEK",
+        "HDFGS", "HEDEF", "HEKTS", "HKTM", "HLGYO", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ",
+        "ICBCT", "IDEAS", "IDGYO", "IEYHO", "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY",
+        "IMASM", "INDES", "INFO", "INGRM", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR",
+        "ISCTR", "ISDMR", "ISFIN", "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT",
+        "ITTFH", "IZENR", "IZFAS", "IZINV", "IZMDC", "JANTS", "KAPLM", "KARYE", "KARSN", "KARTN",
+        "KARYE", "KATMR", "KAYSE", "KCAER", "KCMKW", "KDOAS", "KFEIN", "KGYO", "KBORU", "KIMMR",
+        "KLGYO", "KLKIM", "KLMSN", "KLNMA", "KLRHO", "KLSYN", "KMPUR", "KNFRT", "KONKA", "KONTR",
+        "KONYA", "KOPOL", "KORDS", "KOZAA", "KOZAL", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT",
+        "KRPLS", "KRSTL", "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS",
+        "KZBGY", "KZGYO", "LIDER", "LIDFA", "LINK", "LKMNH", "LOGO", "LRSHO", "LUKSK", "MAALT",
+        "MACKO", "MAGEN", "MAKIM", "MAKTK", "MANAS", "MARBL", "MARKA", "MARTI", "MAVI", "MEDTR",
+        "MEGAP", "MEGMT", "MEKAG", "MNDRS", "MENBA", "MERCN", "MERIT", "MERKO", "METUR", "MGROS",
+        "MIATK", "MIPAZ", "MMCAS", "MNDTR", "MOBTL", "MOGAN", "MONDU", "MPARK", "MRGYO", "MRSHL",
+        "MSGYO", "MTRKS", "MTRYO", "MUNDA", "NATA", "NETAS", "NIBAS", "NTGAZ", "NTHOL", "NUGYO",
+        "NUHCM", "OBAMS", "OBASE", "ODAS", "ODINE", "OFSYM", "ONCSM", "ORCAY", "ORGE", "ORMA",
+        "OSMEN", "OSTIM", "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZGYO", "OZKGY",
+        "OZRDN", "OZSUB", "PAGYO", "PAMEL", "PAPIL", "PARSN", "PASEU", "PCILT", "PEGYO", "PEKGY",
+        "PENGD", "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART", "PKENT", "PLAT", "PNLSN",
+        "PNSUT", "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA", "PSDTC", "PSGYO", "QNBFB",
+        "QNBFL", "QUAGR", "RALYH", "RAYSG", "RNPOL", "REEDR", "RHEAG", "RODRG", "ROYAL", "RTALB",
+        "RUBNS", "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL", "SANFM", "SANKO", "SARKY",
+        "SARTN", "SASA", "SAYAS", "SDTTR", "SEKFK", "SEKUR", "SELEC", "SELGD", "SELVA", "SEYKM",
+        "SILVR", "SISE", "SKBNK", "SKTAS", "SMART", "SMRTG", "SNAET", "SNPAM", "SNGYO", "SNKRN",
+        "SOKE", "SOKM", "SONME", "SRVGY", "SUMAS", "SUNGW", "SURGY", "SUWEN", "TABGD", "TARKM",
+        "TATEN", "TATGD", "TAVHL", "TBORG", "TCELL", "TDGYO", "TEKTU", "TERA", "TETMT", "TEZOL",
+        "TGSAS", "THYAO", "TKFEN", "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRCAS",
+        "TRGYO", "TRILC", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK", "TUCLK", "TUKAS", "TUPRS",
+        "TUREX", "TURGG", "TURSG", "UFUK", "ULAS", "ULKER", "ULUFA", "ULUSE", "ULUUN", "UMPAS",
+        "UNLU", "USAK", "UZERB", "VAKBN", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE",
+        "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL",
+        "YGGYO", "YGYO", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZOREN",
+        "ZRGYO"
     ]
 
-# --- 2. CANLI LİSTE MOTORU (HATASIZ) ---
+# --- CANLI LİSTE MOTORU ---
 @st.cache_data(ttl=600)
 def get_live_tickers():
     canli_liste = []
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
         url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx"
-        r = requests.get(url, headers=headers, timeout=5)
-        soup = BeautifulSoup(r.content, 'html.parser')
-        table = soup.find('table', {'id': 'tableHisseOnerileri'})
-        if table:
-            rows = table.find('tbody').find_all('tr')
-            for row in rows:
-                cols = row.find_all('td')
-                if cols: canli_liste.append(cols[0].find('a').text.strip())
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            table = soup.find('table', {'id': 'tableHisseOnerileri'})
+            if table:
+                rows = table.find('tbody').find_all('tr')
+                for row in rows:
+                    cols = row.find_all('td')
+                    if cols: canli_liste.append(cols[0].find('a').text.strip())
     except: pass
     
-    if len(canli_liste) < 50:
-        return sorted(list(set(get_backup_list())))
+    if len(canli_liste) < 50: return sorted(list(set(get_backup_list())))
     return sorted(list(set(canli_liste)))
 
-# --- 3. ÇOKLU CANLI FİYAT MOTORU ---
+# --- CANLI FİYAT ---
 def get_realtime_price(ticker):
-    clean_ticker = ticker.replace('.IS', '')
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    time.sleep(random.uniform(0.5, 1.0))
     try:
-        url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{clean_ticker}-detay/"
-        r = requests.get(url, headers=headers, timeout=3)
-        soup = BeautifulSoup(r.content, "html.parser")
-        fiyat = soup.select_one('.price-arrow-down, .price-arrow-up, .text-2')
-        if fiyat: return float(fiyat.text.strip().replace(',', '.'))
-    except: pass
-    return None
+        url = f"https://bigpara.hurriyet.com.tr/borsa/hisse-fiyatlari/{ticker.replace('.IS','')}-detay/"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        resp = requests.get(url, headers=headers, timeout=3)
+        soup = BeautifulSoup(resp.content, "html.parser")
+        price_span = soup.find("span", {"class": "text-2"})
+        if not price_span: price_span = soup.select_one('.price-arrow-down, .price-arrow-up')
+        if price_span: return float(price_span.text.strip().replace(',', '.'))
+    except: return None
 
-# --- 4. GLOBAL VE HABER MOTORU (BİRLEŞİK) ---
+# --- GELİŞMİŞ HABER MOTORU ---
 class GlobalIntel:
     def __init__(self):
         self.risk_keywords = ['savaş', 'kriz', 'çöküş', 'enflasyon', 'faiz', 'gerilim', 'yaptırım', 'ceza', 'zarar', 'satış']
@@ -180,14 +181,10 @@ class GlobalIntel:
     def analyze_news(self, query_type="GENEL", ticker=""):
         sentiment = 0
         news_display = []
-        
         if query_type == "HISSE":
-            feeds = [f"https://news.google.com/rss/search?q={ticker}+hisse+kap&hl=tr&gl=TR&ceid=TR:tr"]
+            feeds = [f"https://news.google.com/rss/search?q={ticker}+hisse+kap+haberleri&hl=tr&gl=TR&ceid=TR:tr", f"https://news.google.com/rss/search?q={ticker}+borsa+yorum&hl=tr&gl=TR&ceid=TR:tr"]
         else:
-            feeds = [
-                "https://news.google.com/rss/search?q=Borsa+İstanbul+Son+Dakika&hl=tr&gl=TR&ceid=TR:tr",
-                "https://www.trthaber.com/xml/ekonomi.xml"
-            ]
+            feeds = ["https://news.google.com/rss/search?q=Borsa+İstanbul+Ekonomi&hl=tr&gl=TR&ceid=TR:tr", "https://www.trthaber.com/xml/ekonomi.xml"]
             
         for url in feeds:
             try:
@@ -209,7 +206,6 @@ class GlobalIntel:
                                         if w in t_lower: score_delta += 2; impact = "Pozitif"; color = "green"
                                     for w in self.risk_keywords: 
                                         if w in t_lower: score_delta -= 3; impact = "Negatif"; color = "red"
-                                    
                                     sentiment += score_delta
                                     news_display.append({"Title": title, "Link": link, "Date": date_str, "Impact": impact, "Color": color})
                         except: pass
@@ -220,70 +216,39 @@ class GlobalIntel:
             if n['Title'] not in seen: unique.append(n); seen.add(n['Title'])
         return max(-20, min(20, sentiment)), unique[:15]
 
-# --- 5. TEKNİK ANALİZ MOTORU ---
-class TechnicalEngine:
-    def detect_patterns(self, df):
-        patterns = []
-        score = 0
-        try:
-            last = df.iloc[-1]
-            prev = df.iloc[-2]
-            body = abs(last['Close'] - last['Open'])
-            wick_lower = min(last['Close'], last['Open']) - last['Low']
-            if wick_lower > (body * 2): patterns.append("Çekiç"); score += 15
-            if prev['Close'] < prev['Open'] and last['Close'] > last['Open']:
-                if last['Close'] > prev['Open'] and last['Open'] < prev['Close']: patterns.append("Yutan Boğa"); score += 20
-        except: pass
-        return patterns, score
-
-    def analyze(self, df):
-        try:
-            df['RSI'] = ta.rsi(df['Close'], length=14)
-            macd = ta.macd(df['Close'])
-            df = pd.concat([df, macd], axis=1)
-            bb = ta.bbands(df['Close'], length=20)
-            if bb is not None: df = pd.concat([df, bb], axis=1)
-            kc = ta.kc(df['High'], df['Low'], df['Close'])
-            if kc is not None: df = pd.concat([df, kc], axis=1)
-            ichimoku = ta.ichimoku(df['High'], df['Low'], df['Close'])[0]
-            df = pd.concat([df, ichimoku], axis=1)
-            df['OBV'] = ta.obv(df['Close'], df['Volume'])
-            df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
-            df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
-
-            last = df.iloc[-1]
-            prev = df.iloc[-2]
-            if pd.isna(last['RSI']): return 0, [], df
-
-            score = 50
-            reasons = []
-            
-            if last['Close'] > last['VWAP']: score += 10; reasons.append("Fiyat VWAP Üzerinde")
-            if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al")
-            if last['RSI'] < 30: score += 20; reasons.append("RSI Dip")
-            elif last['RSI'] > 70: score -= 15; reasons.append("RSI Tepe")
-            
-            if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: score += 15; reasons.append("Ichimoku Bulutu Üstünde")
-            
-            pats, p_score = self.detect_patterns(df)
-            score += p_score
-            for p in pats: reasons.append(f"Formasyon: {p}")
-
-            return max(0, min(100, score)), reasons, df
-        except: return 0, [], df
-
-# --- 6. ANA MOTOR ---
+# --- ANALİZ MOTORU ---
 class TradingEngine:
     def __init__(self):
-        self.tech = TechnicalEngine()
+        try: from sklearn.preprocessing import StandardScaler
+        except: pass
+        self.model = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42)
         self.intel = GlobalIntel()
 
     def get_fundamentals(self, ticker):
         try:
             stock = yf.Ticker(f"{ticker}.IS")
             info = stock.info
-            return {"FK": info.get('trailingPE'), "PD_DD": info.get('priceToBook')}
+            fk = info.get('trailingPE', None)
+            pddd = info.get('priceToBook', None)
+            return {"FK": round(fk, 2) if fk else "-", "PD_DD": round(pddd, 2) if pddd else "-"}
         except: return None
+
+    def detect_patterns(self, df):
+        patterns = []
+        score_boost = 0
+        try:
+            last = df.iloc[-1]
+            prev = df.iloc[-2]
+            body = abs(last['Close'] - last['Open'])
+            wick_up = last['High'] - max(last['Close'], last['Open'])
+            wick_down = min(last['Close'], last['Open']) - last['Low']
+            
+            if wick_down > (body * 2) and wick_up < (body * 0.5): patterns.append("Çekiç (Hammer)"); score_boost += 15
+            if body <= (last['High'] - last['Low']) * 0.1: patterns.append("Doji"); score_boost += 5
+            if prev['Close'] < prev['Open'] and last['Close'] > last['Open']:
+                if last['Close'] > prev['Open'] and last['Open'] < prev['Close']: patterns.append("Yutan Boğa"); score_boost += 20
+        except: pass
+        return patterns, score_boost
 
     def analyze(self, ticker, mode="PRO"):
         try:
@@ -299,54 +264,95 @@ class TradingEngine:
             is_live = False
             if mode == "PRO":
                 live_price = get_realtime_price(ticker)
-                if live_price:
+                if live_price and live_price > 0:
                     if abs(live_price - df.iloc[-1]['Close']) / df.iloc[-1]['Close'] < 0.20:
                         df.iloc[-1, df.columns.get_loc('Close')] = live_price
-                        df.iloc[-1, df.columns.get_loc('High')] = max(live_price, df.iloc[-1]['High'])
-                        df.iloc[-1, df.columns.get_loc('Low')] = min(live_price, df.iloc[-1]['Low'])
                         is_live = True
 
-            tech_score, tech_reasons, processed_df = self.tech.analyze(df)
-            news_score, news_list = self.intel.analyze_news("HISSE", ticker)
-            fund = self.get_fundamentals(ticker)
+            df['RSI'] = ta.rsi(df['Close'], length=14)
+            macd = ta.macd(df['Close'])
+            df = pd.concat([df, macd], axis=1)
+            bb = ta.bbands(df['Close'], length=20)
+            if bb is not None: df = pd.concat([df, bb], axis=1)
+            kc = ta.kc(df['High'], df['Low'], df['Close'])
+            if kc is not None: df = pd.concat([df, kc], axis=1)
+            ichimoku = ta.ichimoku(df['High'], df['Low'], df['Close'])[0]
+            df = pd.concat([df, ichimoku], axis=1)
+            df['OBV'] = ta.obv(df['Close'], df['Volume'])
+            df['VWAP'] = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
+            df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], length=14)
+
+            last = df.iloc[-1]
+            if pd.isna(last['RSI']): return None
+
+            score = 50
+            reasons = []
+            if last['Close'] > last['VWAP']: score += 10; reasons.append("Fiyat VWAP Üzerinde")
+            if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al Sinyali")
+            if last['RSI'] < 30: score += 20; reasons.append("RSI Aşırı Satım")
+            elif last['RSI'] > 70: score -= 15; reasons.append("RSI Aşırı Alım")
+            if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: score += 10; reasons.append("Ichimoku Bulutu Üstünde")
+
+            patterns, pat_score = self.detect_patterns(df)
+            score += pat_score
+            for p in patterns: reasons.append(f"Formasyon: {p}")
+
+            news_data = []
+            if mode == "PRO":
+                news_score, news_list = self.intel.analyze_news("HISSE", ticker)
+                score += news_score
+                news_data = news_list
+                if news_score > 0: reasons.append("Haber Akışı Pozitif")
+                elif news_score < 0: reasons.append("Haber Akışı Negatif")
             
-            final_score = max(0, min(100, tech_score + news_score))
-            signal = "NÖTR"; color = "gray"
-            if final_score >= 80: signal = "GÜÇLÜ AL 🚀"; color = "green"
-            elif final_score >= 60: signal = "AL 🌱"; color = "blue"
-            elif final_score <= 30: signal = "SAT 🔻"; color = "red"
+            score = max(0, min(100, score))
+            signal, color = "NÖTR / İZLE", "gray"
+            if score >= 80: signal, color = "GÜÇLÜ AL 🚀", "green"
+            elif score >= 60: signal, color = "AL 🌱", "blue"
+            elif score <= 30: signal, color = "SAT 🔻", "red"
+
+            stop = last['Close'] - (last['ATR'] * 1.5)
+            hedef = last['Close'] + (last['ATR'] * 3.0)
+            temel = self.get_fundamentals(ticker)
             
-            last = processed_df.iloc[-1]
+            # Tarih formatı (KeyError çözümü için eklendi)
+            tarih_str = df.index[-1].strftime('%d.%m %H:%M')
+
             return {
-                "Hisse": ticker, "Fiyat": last['Close'], "Skor": int(final_score),
+                "Hisse": ticker, "Fiyat": last['Close'], "Skor": int(score),
                 "Sinyal": signal, "Renk": color, "RSI": last['RSI'],
-                "Stop": last['Close'] - (last['ATR']*1.5), "Hedef": last['Close'] + (last['ATR']*3.0),
-                "Yorumlar": tech_reasons, "Haberler": news_list, "Temel": fund, "Data": processed_df, "Is_Live": is_live
+                "Stop": stop, "Hedef": hedef, "Yorumlar": reasons, 
+                "Data": df, "Tarih": tarih_str, # <-- EKLENDİ
+                "Is_Live": is_live, "Temel": temel, "Haberler": news_data
             }
-        except: return None
+        except Exception as e: return None
 
     def analyze_batch(self, tickers_list):
         results = []
+        symbols = [f"{t}.IS" for t in tickers_list]
         try:
-            data = yf.download([f"{t}.IS" for t in tickers_list], period="3mo", interval="60m", group_by='ticker', progress=False, threads=True)
+            data = yf.download(symbols, period="3mo", interval="60m", group_by='ticker', progress=False, threads=True)
             for ticker in tickers_list:
                 try:
-                    df = data[f"{ticker}.IS"].copy().dropna()
-                    if len(df) < 50: continue
-                    rsi = ta.rsi(df['Close'], 14).iloc[-1]
+                    try: df = data[f"{ticker}.IS"].copy()
+                    except: continue
+                    if df.empty or df['Close'].isnull().all(): continue
+                    df = df.dropna()
+                    if len(df) < 50: continue 
+                    rsi = ta.rsi(df['Close'], length=14)
                     vwap = (df['Volume'] * (df['High']+df['Low']+df['Close'])/3).cumsum() / df['Volume'].cumsum()
-                    last = df['Close'].iloc[-1]
-                    
+                    last_close = df['Close'].iloc[-1]
+                    last_rsi = rsi.iloc[-1]
+                    last_vwap = vwap.iloc[-1]
+                    if last_close <= 0 or pd.isna(last_rsi): continue
                     score = 50
-                    if rsi < 40: score += 20
-                    if last > vwap.iloc[-1]: score += 10
-                    
+                    if rsi.iloc[-1] < 45 and last_close > vwap.iloc[-1]: score = 85
+                    elif rsi.iloc[-1] > 70: score = 20
                     signal = "NÖTR"
-                    if score >= 80: signal = "GÜÇLÜ AL 🚀"
-                    elif score <= 30: signal = "SAT 🔻"
-                    
+                    if score >= 80: signal = "GÜÇLÜ AL"
+                    elif score <= 30: signal = "SAT"
                     if signal != "NÖTR":
-                        results.append({"Hisse": ticker, "Fiyat": last, "Sinyal": signal, "RSI": rsi, "Skor": score})
+                        results.append({"Hisse": ticker, "Fiyat": last_close, "Sinyal": signal, "RSI": last_rsi, "Skor": int(score)})
                 except: continue
         except: pass
         return results
@@ -379,43 +385,47 @@ def main():
                     k1.metric("Fiyat", f"{res['Fiyat']:.2f} TL", delta="Canlı" if res['Is_Live'] else "Gecikmeli")
                     k2.metric("Skor", f"{res['Skor']}/100")
                     k3.metric("Karar", res['Sinyal'])
-                    fk_val = res['Temel']['FK'] if res['Temel'] and res['Temel']['FK'] else "-"
-                    k4.metric("Temel (F/K)", fk_val)
+                    temel = res['Temel']
+                    fk_val = temel['FK'] if temel else "-"
+                    k4.metric("Temel", f"F/K: {fk_val}")
                     st.divider()
                     
                     col_g, col_d = st.columns([2, 1])
                     with col_g:
+                        st.subheader(f"📊 {sembol} Teknik Grafik")
                         df = res['Data']
                         fig = go.Figure()
                         fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name="Fiyat"))
-                        
-                        # Dinamik Kolon Bulma
                         bbu = next((c for c in df.columns if c.startswith('BBU')), None)
                         if bbu: fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', dash='dot'), name='Bollinger'))
                         kcu = next((c for c in df.columns if c.startswith('KCU')), None)
                         if kcu: fig.add_trace(go.Scatter(x=df.index, y=df[kcu], line=dict(color='purple'), name='Keltner'))
-                        
                         fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange'), name='VWAP'))
-                        fig.update_layout(template="plotly_dark", height=500, xaxis_rangeslider_visible=False, title=f"Veri Zamanı: {res['Tarih']}")
-                        st.plotly_chart(fig, use_container_width=True)
                         
+                        # HATA BURADAYDI: res['Tarih'] kullanılıyor
+                        fig.update_layout(template="plotly_dark", height=500, xaxis_rangeslider_visible=False, title=f"Veri Zamanı: {res.get('Tarih', '---')}")
+                        st.plotly_chart(fig, use_container_width=True)
                     with col_d:
-                        st.subheader("📝 Tespitler")
-                        for y in res['Yorumlar']: st.markdown(f"✅ {y}")
+                        st.subheader("🧠 Analiz")
+                        if res['Renk'] == 'green': st.success(f"**{res['Sinyal']}**")
+                        else: st.warning(f"**{res['Sinyal']}**")
                         st.info(f"Hedef: {res['Hedef']:.2f}")
                         st.error(f"Stop: {res['Stop']:.2f}")
+                        for y in res['Yorumlar']: st.markdown(f"✅ {y}")
                     
                     st.markdown("---")
                     st.subheader("📰 Haberler")
                     if res['Haberler']:
                         for n in res['Haberler']:
-                            st.markdown(f"🔹 **[{n['Title']}]({n['Link']})** ({n['Date']})")
+                            color = "🟢" if n['Impact'] == "Pozitif" else "🔴" if n['Impact'] == "Negatif" else "⚪"
+                            st.markdown(f"{color} **[{n['Title']}]({n['Link']})** - *{n['Date']}*")
                     else: st.info("Haber yok.")
-                else: st.error("Hisse bulunamadı.")
+                else: st.error("Veri yok.")
 
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
-        st.info(f"Takipteki Hisse: {len(tum_hisseler)}")
+        if not tum_hisseler: st.error("Liste çekilemedi."); st.stop()
+        st.info(f"Takipteki Hisse Sayısı: {len(tum_hisseler)}")
         if st.button("TÜM BORSAYI TARA (Turbo) 🚀", type="primary"):
             all_results = []
             chunk_size = 50 
@@ -429,6 +439,7 @@ def main():
             bar.empty()
             if all_results:
                 df = pd.DataFrame(all_results)
+                st.success(f"Tarama Bitti! {len(df)} Fırsat Bulundu.")
                 st.dataframe(df.style.format({"Fiyat": "{:.2f}", "RSI": "{:.0f}"}).background_gradient(subset=['Skor'], cmap='RdYlGn'), use_container_width=True)
             else: st.warning("Sinyal yok.")
 
