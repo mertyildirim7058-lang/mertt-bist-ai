@@ -20,7 +20,7 @@ LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main
 MEMORY_FILE = "ai_memory.csv"
 
 st.set_page_config(
-    page_title="MERTT AI - Galactic Terminal", 
+    page_title="MERTT AI Terminal", 
     layout="wide", 
     page_icon="🦅"  
 )
@@ -111,8 +111,8 @@ def guvenlik_kontrolu():
     if not st.session_state['giris_yapildi']:
         add_space_theme() # Uzay Temasını Yükle
         
-        c1, c2, c3 = st.columns([1,2,1])
-        with c2:
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
             st.markdown('<div class="login-box">', unsafe_allow_html=True)
             logo_goster()
             st.markdown('<p class="neon-text">SYSTEM ONLINE</p>', unsafe_allow_html=True)
@@ -135,7 +135,7 @@ def guvenlik_kontrolu():
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- YEDEK TAM LİSTE ---
+# --- 2. YEDEK TAM LİSTE (580+ HİSSE - GÜNCEL) ---
 def get_backup_list():
     return [
         "A1CAP", "ACSEL", "ADEL", "ADESE", "ADGYO", "AEFES", "AFYON", "AGESA", "AGHOL", "AGROT", "AGYO",
@@ -192,8 +192,8 @@ def get_backup_list():
         "UNLU", "USAK", "UZERB", "VAKBN", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE",
         "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL",
         "YGGYO", "YGYO", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZOREN",
-        "ZRGYO", "VAKFA", "PAHOL"
-        ]
+        "ZRGYO"
+    ]
 
 # --- CANLI LİSTE MOTORU ---
 @st.cache_data(ttl=600)
@@ -212,6 +212,7 @@ def get_live_tickers():
                     cols = row.find_all('td')
                     if cols: canli_liste.append(cols[0].find('a').text.strip())
     except: pass
+    
     if len(canli_liste) < 50: return sorted(list(set(get_backup_list())))
     return sorted(list(set(canli_liste)))
 
@@ -227,7 +228,7 @@ def get_realtime_price(ticker):
         if p: return float(p.text.strip().replace(',', '.'))
     except: return None
 
-# --- GLOBAL & HABER ---
+# --- GLOBAL & HABER MOTORU ---
 class GlobalIntel:
     def __init__(self):
         self.risk = ['savaş', 'kriz', 'çöküş', 'enflasyon', 'faiz', 'gerilim', 'yaptırım']
@@ -250,33 +251,41 @@ class GlobalIntel:
         return data
 
     def analyze_news(self, query_type="GENEL", ticker=""):
-        sentiment = 0; news_display = []
+        sentiment = 0
+        news_display = []
+        
         urls = [f"https://news.google.com/rss/search?q={ticker}+hisse+kap&hl=tr&gl=TR&ceid=TR:tr"] if query_type == "HISSE" else ["https://news.google.com/rss/search?q=Borsa+Gündem&hl=tr&gl=TR&ceid=TR:tr"]
+        
         for url in urls:
             try:
                 feed = feedparser.parse(requests.get(url, headers={'User-Agent':'Mozilla/5.0'}, timeout=5).content)
                 for entry in feed.entries[:10]: 
-                    title = entry.title.replace(" - Haberler", ""); link = entry.link
+                    title = entry.title.replace(" - Haberler", "")
+                    link = entry.link
                     try:
-                        dt = datetime(*entry.published_parsed[:6])
-                        if (datetime.now() - dt).days <= 7: 
-                            d_str = dt.strftime("%H:%M"); t_lower = title.lower(); delta = 0
-                            for w in self.tech: 
-                                if w in t_lower: delta += 2
-                            for w in self.risk: 
-                                if w in t_lower: delta -= 3
-                            sentiment += delta
-                            if (datetime.now() - dt).days < 1:
-                                col = "green" if delta > 0 else "red" if delta < 0 else "gray"
-                                news_display.append({"Title": title, "Link": link, "Date": d_str, "Color": col})
+                        if hasattr(entry, 'published_parsed'):
+                            dt = datetime(*entry.published_parsed[:6])
+                            if (datetime.now() - dt).days <= 7: 
+                                d_str = dt.strftime("%d.%m %H:%M")
+                                t_lower = title.lower()
+                                imp = "Nötr"; col = "gray"; sd = 0
+                                for w in self.tech: 
+                                    if w in t_lower: sd += 2; imp="Pozitif"; col="green"
+                                for w in self.risk: 
+                                    if w in t_lower: sd -= 3; imp="Negatif"; col="red"
+                                
+                                sentiment += sd
+                                if (datetime.now() - dt).days < 1:
+                                    news_display.append({"Title": title, "Link": link, "Date": d_str, "Color": col})
                     except: pass
             except: pass
+            
         unique = []; seen = set()
         for n in news_display:
             if n['Title'] not in seen: unique.append(n); seen.add(n['Title'])
         return max(-20, min(20, sentiment)), unique[:10]
 
-# --- ANALİZ MOTORU (TAM TEÇHİZAT) ---
+# --- ÖĞRENEN ANALİZ MOTORU (FULL) ---
 class TradingEngine:
     def __init__(self):
         self.model = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42)
@@ -296,12 +305,11 @@ class TradingEngine:
 
     def get_fundamentals(self, ticker):
         try:
-            info = yf.Ticker(f"{ticker}.IS").info
-            fk = info.get('trailingPE'); pddd = info.get('priceToBook')
-            score = 0
-            if fk and fk < 10: score += 10
-            if pddd and pddd < 2: score += 5
-            return {"FK": round(fk, 2) if fk else "-", "PD_DD": round(pddd, 2) if pddd else "-", "Score": score}
+            stock = yf.Ticker(f"{ticker}.IS")
+            info = stock.info
+            fk = info.get('trailingPE', None)
+            pddd = info.get('priceToBook', None)
+            return {"FK": round(fk, 2) if fk else "-", "PD_DD": round(pddd, 2) if pddd else "-", "Score": 0}
         except: return {"FK": "-", "PD_DD": "-", "Score": 0}
 
     def calculate_fibonacci(self, df):
@@ -312,10 +320,24 @@ class TradingEngine:
             return {"0.618": high - 0.618*diff, "Score": 15}
         except: return {"Score": 0}
 
+    def detect_patterns(self, df):
+        patterns = []
+        score = 0
+        try:
+            last = df.iloc[-1]
+            prev = df.iloc[-2]
+            body = abs(last['Close'] - last['Open'])
+            wick_lower = min(last['Close'], last['Open']) - last['Low']
+            
+            if wick_lower > (body * 2): patterns.append("Çekiç (Hammer)"); score += 15
+            if prev['Close'] < prev['Open'] and last['Close'] > last['Open']:
+                if last['Close'] > prev['Open'] and last['Open'] < prev['Close']: patterns.append("Yutan Boğa"); score += 20
+        except: pass
+        return patterns, score
+
     def analyze(self, ticker):
         try:
             t = f"{ticker}.IS"
-            # 1 YILLIK VERİ (EMA 200 İÇİN)
             df = yf.download(t, period="1y", interval="60m", progress=False)
             if df is None or len(df) < 200: return None
             if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
@@ -325,21 +347,18 @@ class TradingEngine:
             if live and abs(live - df.iloc[-1]['Close'])/df.iloc[-1]['Close'] < 0.2:
                 df.iloc[-1, df.columns.get_loc('Close')] = live
 
-            # --- TÜM İNDİKATÖRLER ---
+            # --- İNDİKATÖRLER ---
             df['RSI'] = ta.rsi(df['Close'], 14)
             df['EMA_9'] = ta.ema(df['Close'], 9)
             df['EMA_200'] = ta.ema(df['Close'], 200)
-            df = pd.concat([df, ta.macd(df['Close'])], axis=1)
             
+            df = pd.concat([df, ta.macd(df['Close'])], axis=1)
             bb = ta.bbands(df['Close'], 20)
             if bb is not None: df = pd.concat([df, bb], axis=1)
-            
             kc = ta.kc(df['High'], df['Low'], df['Close'])
             if kc is not None: df = pd.concat([df, kc], axis=1)
-            
             df = pd.concat([df, ta.ichimoku(df['High'], df['Low'], df['Close'])[0]], axis=1)
             df = pd.concat([df, ta.psar(df['High'], df['Low'], df['Close'])], axis=1)
-            
             df['VWAP'] = (df['Volume']*(df['High']+df['Low']+df['Close'])/3).cumsum()/df['Volume'].cumsum()
             df['ATR'] = ta.atr(df['High'], df['Low'], df['Close'], 14)
             df['OBV'] = ta.obv(df['Close'], df['Volume'])
@@ -347,43 +366,41 @@ class TradingEngine:
             last = df.iloc[-1]
             if pd.isna(last['RSI']): return None
 
-            # --- PUANLAMA (HER ŞEY DAHİL) ---
+            # --- PUANLAMA (MATEMATİK) ---
             score = 50
             reasons = []
             
-            # 1. Trend (EMA)
-            if last['Close'] > last['EMA_200']: score += 10; reasons.append("Fiyat EMA 200 Üstünde")
+            if last['Close'] > last['EMA_200']: score += 10; reasons.append("Ana Trend Pozitif")
             else: score -= 20
+            if last['Close'] > last['EMA_9']: score += 5
             
-            # 2. Ichimoku
+            if last['Close'] > last['VWAP']: score += 10
+            if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al")
+            if last['RSI'] < 30: score += 20; reasons.append("RSI Dip")
+            elif last['RSI'] > 70: score -= 15
+            
             if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: score += 10; reasons.append("Ichimoku Bulut Üstü")
+            
+            psar_col = next((c for c in df.columns if c.startswith('PSAR')), None)
+            if psar_col and df[psar_col].iloc[-1] < last['Close']: score += 5; reasons.append("PSAR Yükseliş")
+            
+            fib = self.calculate_fibonacci(df)
+            if fib['Score'] > 0: score += 15; reasons.append("Fibonacci Destek")
 
-            # 3. Sıkışma (Bollinger < Keltner)
             try:
                 bbu = df[[c for c in df.columns if c.startswith('BBU')][0]].iloc[-1]
                 kcu = df[[c for c in df.columns if c.startswith('KCU')][0]].iloc[-1]
                 if bbu < kcu: score += 10; reasons.append("Sıkışma (Patlama Yakın)")
             except: pass
 
-            # 4. Fibonacci
-            fib = self.calculate_fibonacci(df)
-            if fib and abs(last['Close'] - fib['0.618'])/fib['0.618'] < 0.01:
-                 score += 15; reasons.append("Fibonacci 0.618 Desteği")
+            pats, p_score = self.detect_patterns(df)
+            score += p_score
+            for p in pats: reasons.append(f"Formasyon: {p}")
 
-            # 5. Klasikler
-            if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al")
-            if last['Close'] > last['VWAP']: score += 10
-            if last['RSI'] < 30: score += 20
-            
-            psar_col = next((c for c in df.columns if c.startswith('PSAR')), None)
-            if psar_col and df[psar_col].iloc[-1] < last['Close']: score += 10
-
-            # 6. Temel ve Haber
             fund = self.get_fundamentals(ticker)
-            score += fund['Score']
             n_sc, n_lst = self.intel.analyze_news("HISSE", ticker)
             score += n_sc
-            if n_sc > 0: reasons.append("Haber Akışı Pozitif")
+            if n_sc > 0: reasons.append("Haber Pozitif")
 
             # AI
             features = {"RSI": last['RSI'], "MACD_Diff": last['MACD_12_26_9']-last['MACDs_12_26_9'], "VWAP_Diff": (last['Close']-last['VWAP'])/last['VWAP'], "News_Score": n_sc}
@@ -391,7 +408,7 @@ class TradingEngine:
             if self.is_trained:
                 ai_prob = self.model.predict_proba(pd.DataFrame([features]))[0][1] * 100
                 ai_conf = ai_prob
-                if ai_prob > 70: score += 10
+                if ai_prob > 70: score += 10; reasons.append("AI Onaylı")
             
             score = max(0, min(100, score))
             signal, color = "NÖTR", "gray"
@@ -414,7 +431,6 @@ class TradingEngine:
     def analyze_batch(self, tickers):
         res = []
         try:
-            # Batch için 6 ay yeterli (EMA 200'ü hesaplamak için sınırda ama çalışır)
             d = yf.download([f"{t}.IS" for t in tickers], period="6mo", interval="60m", group_by='ticker', progress=False, threads=True)
             for t in tickers:
                 try:
@@ -426,8 +442,9 @@ class TradingEngine:
                     ema200 = ta.ema(df['Close'], 200).iloc[-1]
                     
                     sc = 50
-                    if last > ema200: sc += 15 # Trend Filtresi
-                    if rsi < 40 and last > vwap.iloc[-1]: sc += 20
+                    if last > ema200: sc += 10
+                    else: sc -= 30
+                    if rsi < 40: sc += 25
                     
                     if sc>=80: res.append({"Hisse":t, "Fiyat":last, "Sinyal":"GÜÇLÜ AL 🚀", "RSI":rsi, "Skor":sc})
                 except: continue
@@ -455,7 +472,7 @@ def main():
             btn = st.button("ANALİZ ET", type="primary")
 
         if btn and sembol:
-            with st.spinner("Analiz ediliyor..."):
+            with st.spinner("Tüm İndikatörler Hesaplanıyor..."):
                 res = engine.analyze(sembol)
                 if res: st.session_state['last_res'] = res
 
@@ -474,15 +491,16 @@ def main():
                 df = res['Data']
                 fig = go.Figure(data=[go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name="Fiyat")])
                 
-                # EMA 200 ÇİZ
+                # GRAFİĞE EKLENENLER
                 fig.add_trace(go.Scatter(x=df.index, y=df['EMA_200'], line=dict(color='blue', width=2), name='EMA 200'))
+                fig.add_trace(go.Scatter(x=df.index, y=df['EMA_9'], line=dict(color='cyan', width=1), name='EMA 9'))
                 
                 try:
-                    bbu = next((c for c in df.columns if c.startswith('BBU')), None)
-                    if bbu: fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', dash='dot'), name='Bollinger'))
-                    kcu = next((c for c in df.columns if c.startswith('KCU')), None)
-                    if kcu: fig.add_trace(go.Scatter(x=df.index, y=df[kcu], line=dict(color='purple'), name='Keltner'))
-                    fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange'), name='VWAP'))
+                    bbu = next((c for c in res['Data'].columns if c.startswith('BBU')), None)
+                    if bbu: fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data'][bbu], line=dict(color='gray', dash='dot'), name='Bollinger'))
+                    
+                    psar_col = next((c for c in res['Data'].columns if c.startswith('PSAR')), None)
+                    if psar_col: fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data'][psar_col], mode='markers', name='PSAR'))
                 except: pass
 
                 fig.update_layout(template="plotly_dark", height=500, title=f"Son Veri: {res['Tarih']}")
@@ -491,8 +509,10 @@ def main():
             with g2:
                 if res['Renk']=='green': st.success(f"**{res['Sinyal']}**")
                 else: st.warning(f"**{res['Sinyal']}**")
+                
                 st.info(f"Hedef: {res['Hedef']:.2f}")
                 st.error(f"Stop: {res['Stop']:.2f}")
+                
                 st.write("#### 📝 Nedenler")
                 for y in res['Yorumlar']: st.markdown(f"✅ {y}")
                 
@@ -511,6 +531,7 @@ def main():
 
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
+        st.info(f"{len(tum_hisseler)} Hisse")
         if st.button("TÜM BORSAYI TARA 🚀", type="primary"):
             chunks = [tum_hisseler[i:i+50] for i in range(0, len(tum_hisseler), 50)]
             res = []
