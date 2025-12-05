@@ -20,39 +20,70 @@ LOGO_INTERNET_LINKI = "https://raw.githubusercontent.com/kullaniciadi/proje/main
 MEMORY_FILE = "ai_memory.csv"
 
 st.set_page_config(
-    page_title="MERTT AI Terminal", 
+    page_title="MERTT AI - Galactic Terminal", 
     layout="wide", 
     page_icon="🦅"  
 )
 
-# HAFIZA DOSYASI
+# Hafıza Dosyası
 if not os.path.exists(MEMORY_FILE):
     df_mem = pd.DataFrame(columns=["RSI", "MACD_Diff", "VWAP_Diff", "News_Score", "Outcome"])
     df_mem.to_csv(MEMORY_FILE, index=False)
 
-# --- CSS ANİMASYONLARI (GİRİŞ EKRANI İÇİN) ---
-def add_bg_animation():
+# --- UZAY ÜSSÜ ANİMASYONU (CSS) ---
+def add_space_theme():
     st.markdown(
         """
         <style>
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
+        /* Arka Plan - Uzay Efekti */
+        .stApp {
+            background-color: #000000;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            animation: star-move 200s linear infinite;
         }
-        .login-header {
+        
+        @keyframes star-move {
+            from { background-position: 0 0, 40px 60px, 130px 270px; }
+            to { background-position: -10000px 5000px, 40px 60px, 130px 270px; }
+        }
+
+        /* Giriş Kutusu - Neon */
+        .login-box {
+            border: 2px solid #00ffcc;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px #00ffcc;
+            background: rgba(0, 0, 0, 0.8);
             text-align: center;
-            color: #4CAF50;
-            font-weight: bold;
-            font-size: 24px;
-            animation: pulse 2s infinite;
         }
-        .stButton>button {
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 10px;
-            height: 50px;
+        
+        /* Başlık Efekti */
+        .neon-text {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #00ffcc, 0 0 30px #00ffcc, 0 0 40px #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 30px;
             font-weight: bold;
+        }
+
+        /* Buton Tasarımı */
+        .stButton>button {
+            background: linear-gradient(45deg, #00ffcc, #0033cc);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .stButton>button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #00ffcc;
         }
         </style>
         """,
@@ -67,47 +98,44 @@ def logo_goster():
 
 def pwa_kodlari():
     pwa_html = f"""
-    <meta name="theme-color" content="#0e1117">
+    <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="{LOGO_INTERNET_LINKI}">
     <link rel="icon" type="image/png" href="{LOGO_INTERNET_LINKI}">
     """
     components.html(f"<html><head>{pwa_html}</head></html>", height=0, width=0)
 pwa_kodlari()
 
-# --- GÜVENLİK DUVARI (ANİMASYONLU) ---
+# --- GÜVENLİK DUVARI (GÖRSEL EFEKTLİ) ---
 def guvenlik_kontrolu():
     if 'giris_yapildi' not in st.session_state: st.session_state['giris_yapildi'] = False
-    
     if not st.session_state['giris_yapildi']:
-        add_bg_animation() # Animasyonu yükle
+        add_space_theme() # Uzay Temasını Yükle
         
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            st.markdown("<br><br>", unsafe_allow_html=True)
+        c1, c2, c3 = st.columns([1,2,1])
+        with c2:
+            st.markdown('<div class="login-box">', unsafe_allow_html=True)
             logo_goster()
-            st.markdown('<p class="login-header">Gelecek İçin Bilgi ve Teknoloji</p>', unsafe_allow_html=True)
-            st.divider()
-            sifre = st.text_input("Kuantum Erişim Anahtarı:", type="password")
-            
-            if st.button("Sisteme Bağlan 🚀", use_container_width=True):
+            st.markdown('<p class="neon-text">SYSTEM ONLINE</p>', unsafe_allow_html=True)
+            st.markdown("---")
+            sifre = st.text_input("Kuantum Erişim Kodu:", type="password")
+            if st.button("BAĞLANTIYI BAŞLAT 🚀", use_container_width=True):
                 try:
                     if sifre == st.secrets["GIRIS_SIFRESI"]: 
-                        with st.spinner("Kuantum şifreleme çözülüyor..."):
-                            time.sleep(1) # Efekt için bekleme
-                        st.balloons() # Başarı Balonları!
-                        st.success("Erişim Onaylandı!")
-                        time.sleep(1)
+                        with st.spinner("Biyometrik Doğrulama..."):
+                            time.sleep(1)
+                        with st.spinner("Uydu Bağlantısı Kuruluyor..."):
+                            time.sleep(1)
                         st.session_state['giris_yapildi'] = True
                         st.rerun()
-                    else: 
-                        st.error("⛔ Yetkisiz Erişim! IP Loglandı.")
-                except: st.error("Sistem Hatası: Şifre tanımlı değil.")
+                    else: st.error("⛔ ERİŞİM REDDEDİLDİ!")
+                except: st.error("Sistem Hatası: Şifre Tanımsız.")
+            st.markdown('</div>', unsafe_allow_html=True)
         return False
     return True
 
 if not guvenlik_kontrolu(): st.stop()
 
-# --- YEDEK LİSTE ---
+# --- YEDEK TAM LİSTE ---
 def get_backup_list():
     return ["THYAO","ASELS","KCHOL","GARAN","AKBNK","SASA","SISE","EREGL","TUPRS","BIMAS","HEKTS","PETKM","ISCTR","SAHOL","FROTO","YKBNK","EKGYO","ODAS","KOZAL","KONTR","ASTOR","EUPWR","GUBRF","OYAKC","TCELL","TTKOM","ENKAI","VESTL","ARCLK","TOASO","PGSUS","TAVHL","MGROS","SOKM","AEFES","AGHOL","AHGAZ","AKFGY","AKSA","ALARK","ALFAS"]
 
@@ -128,7 +156,6 @@ def get_live_tickers():
                     cols = row.find_all('td')
                     if cols: canli_liste.append(cols[0].find('a').text.strip())
     except: pass
-    
     if len(canli_liste) < 50: return sorted(list(set(get_backup_list())))
     return sorted(list(set(canli_liste)))
 
@@ -144,7 +171,7 @@ def get_realtime_price(ticker):
         if p: return float(p.text.strip().replace(',', '.'))
     except: return None
 
-# --- GLOBAL & HABER MOTORU ---
+# --- GLOBAL & HABER ---
 class GlobalIntel:
     def __init__(self):
         self.risk = ['savaş', 'kriz', 'çöküş', 'enflasyon', 'faiz', 'gerilim', 'yaptırım']
@@ -157,8 +184,8 @@ class GlobalIntel:
             df = yf.download(" ".join(indices.values()), period="5d", interval="15m", progress=False)['Close'].ffill().bfill()
             for name, symbol in indices.items():
                 try:
-                    price = df[symbol].dropna().iloc[-1]
-                    prev = df[symbol].dropna().iloc[-2]
+                    price = df[symbol].iloc[-1]
+                    prev = df[symbol].iloc[-2]
                     change = ((price - prev) / prev) * 100
                     fmt = "%.0f" if "Bitcoin" in name else "%.2f"
                     data[name] = {"Fiyat": price, "Degisim": change, "Fmt": fmt}
@@ -167,41 +194,33 @@ class GlobalIntel:
         return data
 
     def analyze_news(self, query_type="GENEL", ticker=""):
-        sentiment = 0
-        news_display = []
-        
+        sentiment = 0; news_display = []
         urls = [f"https://news.google.com/rss/search?q={ticker}+hisse+kap&hl=tr&gl=TR&ceid=TR:tr"] if query_type == "HISSE" else ["https://news.google.com/rss/search?q=Borsa+Gündem&hl=tr&gl=TR&ceid=TR:tr"]
-        
         for url in urls:
             try:
                 feed = feedparser.parse(requests.get(url, headers={'User-Agent':'Mozilla/5.0'}, timeout=5).content)
                 for entry in feed.entries[:10]: 
-                    title = entry.title.replace(" - Haberler", "")
-                    link = entry.link
+                    title = entry.title.replace(" - Haberler", ""); link = entry.link
                     try:
-                        if hasattr(entry, 'published_parsed'):
-                            dt = datetime(*entry.published_parsed[:6])
-                            if (datetime.now() - dt).days <= 7: 
-                                d_str = dt.strftime("%d.%m %H:%M")
-                                t_lower = title.lower()
-                                imp = "Nötr"; col = "gray"; sd = 0
-                                for w in self.tech: 
-                                    if w in t_lower: sd += 2; imp="Pozitif"; col="green"
-                                for w in self.risk: 
-                                    if w in t_lower: sd -= 3; imp="Negatif"; col="red"
-                                
-                                sentiment += sd
-                                if (datetime.now() - dt).days < 1:
-                                    news_display.append({"Title": title, "Link": link, "Date": d_str, "Color": col})
+                        dt = datetime(*entry.published_parsed[:6])
+                        if (datetime.now() - dt).days <= 7: 
+                            d_str = dt.strftime("%H:%M"); t_lower = title.lower(); delta = 0
+                            for w in self.tech: 
+                                if w in t_lower: delta += 2
+                            for w in self.risk: 
+                                if w in t_lower: delta -= 3
+                            sentiment += delta
+                            if (datetime.now() - dt).days < 1:
+                                col = "green" if delta > 0 else "red" if delta < 0 else "gray"
+                                news_display.append({"Title": title, "Link": link, "Date": d_str, "Color": col})
                     except: pass
             except: pass
-            
         unique = []; seen = set()
         for n in news_display:
             if n['Title'] not in seen: unique.append(n); seen.add(n['Title'])
         return max(-20, min(20, sentiment)), unique[:10]
 
-# --- ÖĞRENEN ANALİZ MOTORU (FULL + EMA) ---
+# --- ANALİZ MOTORU (TAM TEÇHİZAT) ---
 class TradingEngine:
     def __init__(self):
         self.model = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42)
@@ -221,47 +240,39 @@ class TradingEngine:
 
     def get_fundamentals(self, ticker):
         try:
-            stock = yf.Ticker(f"{ticker}.IS")
-            info = stock.info
-            fk = info.get('trailingPE', None)
-            pddd = info.get('priceToBook', None)
-            return {"FK": round(fk, 2) if fk else "-", "PD_DD": round(pddd, 2) if pddd else "-"}
-        except: return None
+            info = yf.Ticker(f"{ticker}.IS").info
+            fk = info.get('trailingPE'); pddd = info.get('priceToBook')
+            score = 0
+            if fk and fk < 10: score += 10
+            if pddd and pddd < 2: score += 5
+            return {"FK": round(fk, 2) if fk else "-", "PD_DD": round(pddd, 2) if pddd else "-", "Score": score}
+        except: return {"FK": "-", "PD_DD": "-", "Score": 0}
 
-    def detect_patterns(self, df):
-        patterns = []
-        score = 0
+    def calculate_fibonacci(self, df):
         try:
-            last = df.iloc[-1]
-            prev = df.iloc[-2]
-            body = abs(last['Close'] - last['Open'])
-            wick_lower = min(last['Close'], last['Open']) - last['Low']
-            
-            if wick_lower > (body * 2): patterns.append("Çekiç"); score += 15
-            if prev['Close'] < prev['Open'] and last['Close'] > last['Open']:
-                if last['Close'] > prev['Open'] and last['Open'] < prev['Close']: patterns.append("Yutan Boğa"); score += 20
-        except: pass
-        return patterns, score
+            high = df['High'].tail(100).max()
+            low = df['Low'].tail(100).min()
+            diff = high - low
+            return {"0.618": high - 0.618*diff, "Score": 15}
+        except: return {"Score": 0}
 
     def analyze(self, ticker):
         try:
             t = f"{ticker}.IS"
-            # EMA 200 için 1 yıl veri
+            # 1 YILLIK VERİ (EMA 200 İÇİN)
             df = yf.download(t, period="1y", interval="60m", progress=False)
             if df is None or len(df) < 200: return None
             if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
             df = df.ffill().bfill()
             
-            # Canlı Yama
             live = get_realtime_price(ticker)
             if live and abs(live - df.iloc[-1]['Close'])/df.iloc[-1]['Close'] < 0.2:
                 df.iloc[-1, df.columns.get_loc('Close')] = live
 
-            # --- TÜM İNDİKATÖRLER (EMA 9 & 200 EKLENDİ) ---
+            # --- TÜM İNDİKATÖRLER ---
             df['RSI'] = ta.rsi(df['Close'], 14)
             df['EMA_9'] = ta.ema(df['Close'], 9)
             df['EMA_200'] = ta.ema(df['Close'], 200)
-            
             df = pd.concat([df, ta.macd(df['Close'])], axis=1)
             
             bb = ta.bbands(df['Close'], 20)
@@ -280,34 +291,43 @@ class TradingEngine:
             last = df.iloc[-1]
             if pd.isna(last['RSI']): return None
 
-            # --- PUANLAMA ---
+            # --- PUANLAMA (HER ŞEY DAHİL) ---
             score = 50
             reasons = []
             
-            # Trend (EMA 200 & 9)
-            if last['Close'] > last['EMA_200']: score += 10; reasons.append("Ana Trend Pozitif (EMA 200)")
-            else: score -= 15
-            if last['Close'] > last['EMA_9']: score += 5
+            # 1. Trend (EMA)
+            if last['Close'] > last['EMA_200']: score += 10; reasons.append("Fiyat EMA 200 Üstünde")
+            else: score -= 20
             
-            if last['Close'] > last['VWAP']: score += 10
-            if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al")
-            
-            if last['RSI'] < 30: score += 20; reasons.append("RSI Ucuz")
-            elif last['RSI'] > 70: score -= 15
+            # 2. Ichimoku
+            if last['Close'] > last['ISA_9'] and last['Close'] > last['ISB_26']: score += 10; reasons.append("Ichimoku Bulut Üstü")
 
-            if last['Close'] > last['ISA_9']: score += 10; reasons.append("Ichimoku Trend")
+            # 3. Sıkışma (Bollinger < Keltner)
+            try:
+                bbu = df[[c for c in df.columns if c.startswith('BBU')][0]].iloc[-1]
+                kcu = df[[c for c in df.columns if c.startswith('KCU')][0]].iloc[-1]
+                if bbu < kcu: score += 10; reasons.append("Sıkışma (Patlama Yakın)")
+            except: pass
+
+            # 4. Fibonacci
+            fib = self.calculate_fibonacci(df)
+            if fib and abs(last['Close'] - fib['0.618'])/fib['0.618'] < 0.01:
+                 score += 15; reasons.append("Fibonacci 0.618 Desteği")
+
+            # 5. Klasikler
+            if last['MACD_12_26_9'] > last['MACDs_12_26_9']: score += 15; reasons.append("MACD Al")
+            if last['Close'] > last['VWAP']: score += 10
+            if last['RSI'] < 30: score += 20
             
-            # PSAR
             psar_col = next((c for c in df.columns if c.startswith('PSAR')), None)
             if psar_col and df[psar_col].iloc[-1] < last['Close']: score += 10
 
-            pats, p_score = self.detect_patterns(df)
-            score += p_score
-            for p in pats: reasons.append(f"Formasyon: {p}")
-
+            # 6. Temel ve Haber
+            fund = self.get_fundamentals(ticker)
+            score += fund['Score']
             n_sc, n_lst = self.intel.analyze_news("HISSE", ticker)
             score += n_sc
-            if n_sc > 0: reasons.append("Haber+")
+            if n_sc > 0: reasons.append("Haber Akışı Pozitif")
 
             # AI
             features = {"RSI": last['RSI'], "MACD_Diff": last['MACD_12_26_9']-last['MACDs_12_26_9'], "VWAP_Diff": (last['Close']-last['VWAP'])/last['VWAP'], "News_Score": n_sc}
@@ -331,27 +351,27 @@ class TradingEngine:
                 "Sinyal": signal, "Renk": color, "RSI": last['RSI'],
                 "Stop": stop, "Hedef": hedef, "Yorumlar": reasons, "Haberler": n_lst, 
                 "Data": df, "Features": features, "AI_Conf": ai_conf,
-                "Temel": self.get_fundamentals(ticker)
+                "Temel": fund, "Tarih": df.index[-1].strftime('%d.%m %H:%M')
             }
         except: return None
 
     def analyze_batch(self, tickers):
         res = []
         try:
-            # Batch işleminde 1 yıl veri çekmek yavaş olabilir, 3 ay yeterli ama EMA 200 çalışmaz.
-            # Radar için EMA 200 yerine EMA 50 kullanalım veya hızlı olsun diye 3 ay çekip EMA es geçelim.
-            d = yf.download([f"{t}.IS" for t in tickers], period="3mo", interval="60m", group_by='ticker', progress=False, threads=True)
+            # Batch için 6 ay yeterli (EMA 200'ü hesaplamak için sınırda ama çalışır)
+            d = yf.download([f"{t}.IS" for t in tickers], period="6mo", interval="60m", group_by='ticker', progress=False, threads=True)
             for t in tickers:
                 try:
                     df = d[f"{t}.IS"].dropna()
-                    if len(df)<50: continue
+                    if len(df)<100: continue
                     rsi = ta.rsi(df['Close'], 14).iloc[-1]
                     last = df['Close'].iloc[-1]
                     vwap = (df['Volume']*(df['High']+df['Low']+df['Close'])/3).cumsum()/df['Volume'].cumsum()
+                    ema200 = ta.ema(df['Close'], 200).iloc[-1]
                     
                     sc = 50
-                    if rsi<40 and last>vwap.iloc[-1]: sc=85
-                    elif rsi>70: sc=20
+                    if last > ema200: sc += 15 # Trend Filtresi
+                    if rsi < 40 and last > vwap.iloc[-1]: sc += 20
                     
                     if sc>=80: res.append({"Hisse":t, "Fiyat":last, "Sinyal":"GÜÇLÜ AL 🚀", "RSI":rsi, "Skor":sc})
                 except: continue
@@ -362,7 +382,6 @@ class TradingEngine:
 def main():
     with st.sidebar:
         logo_goster()
-        st.caption("v67.0 - Trend Master")
         st.divider()
         menu = st.radio("Panel", ["💬 Öğrenen Analiz", "📡 Piyasa Radarı", "🌍 Global", "Çıkış"])
         if menu == "Çıkış": st.session_state['giris_yapildi'] = False; st.rerun()
@@ -380,7 +399,7 @@ def main():
             btn = st.button("ANALİZ ET", type="primary")
 
         if btn and sembol:
-            with st.spinner("EMA 200, Parabolic SAR ve Haberler taranıyor..."):
+            with st.spinner("Analiz ediliyor..."):
                 res = engine.analyze(sembol)
                 if res: st.session_state['last_res'] = res
 
@@ -399,26 +418,25 @@ def main():
                 df = res['Data']
                 fig = go.Figure(data=[go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name="Fiyat")])
                 
-                # GRAFİĞE YENİ İNDİKATÖRLER EKLENDİ
+                # EMA 200 ÇİZ
                 fig.add_trace(go.Scatter(x=df.index, y=df['EMA_200'], line=dict(color='blue', width=2), name='EMA 200'))
-                fig.add_trace(go.Scatter(x=df.index, y=df['EMA_9'], line=dict(color='cyan', width=1), name='EMA 9'))
                 
-                bbu = next((c for c in res['Data'].columns if c.startswith('BBU')), None)
-                if bbu: fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data'][bbu], line=dict(color='gray', dash='dot'), name='Bollinger'))
-                
-                psar_col = next((c for c in res['Data'].columns if c.startswith('PSAR')), None)
-                if psar_col: fig.add_trace(go.Scatter(x=res['Data'].index, y=res['Data'][psar_col], mode='markers', name='PSAR'))
-                
-                fig.update_layout(template="plotly_dark", height=500)
+                try:
+                    bbu = next((c for c in df.columns if c.startswith('BBU')), None)
+                    if bbu: fig.add_trace(go.Scatter(x=df.index, y=df[bbu], line=dict(color='gray', dash='dot'), name='Bollinger'))
+                    kcu = next((c for c in df.columns if c.startswith('KCU')), None)
+                    if kcu: fig.add_trace(go.Scatter(x=df.index, y=df[kcu], line=dict(color='purple'), name='Keltner'))
+                    fig.add_trace(go.Scatter(x=df.index, y=df['VWAP'], line=dict(color='orange'), name='VWAP'))
+                except: pass
+
+                fig.update_layout(template="plotly_dark", height=500, title=f"Son Veri: {res['Tarih']}")
                 st.plotly_chart(fig, use_container_width=True)
             
             with g2:
                 if res['Renk']=='green': st.success(f"**{res['Sinyal']}**")
                 else: st.warning(f"**{res['Sinyal']}**")
-                
                 st.info(f"Hedef: {res['Hedef']:.2f}")
                 st.error(f"Stop: {res['Stop']:.2f}")
-                
                 st.write("#### 📝 Nedenler")
                 for y in res['Yorumlar']: st.markdown(f"✅ {y}")
                 
@@ -437,7 +455,6 @@ def main():
 
     elif menu == "📡 Piyasa Radarı":
         st.title("📡 MERTT Piyasa Radarı")
-        st.info(f"{len(tum_hisseler)} Hisse")
         if st.button("TÜM BORSAYI TARA 🚀", type="primary"):
             chunks = [tum_hisseler[i:i+50] for i in range(0, len(tum_hisseler), 50)]
             res = []
