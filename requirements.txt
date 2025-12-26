@@ -13,3 +13,4 @@ openpyxl
 scikit-learn
 matplotlib
 numpy
+pandas-ta
