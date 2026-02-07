@@ -192,7 +192,7 @@ def get_backup_list():
   "UNLU", "USAK", "UZERB", "VAKBN", "VAKFA", "VAKFN", "VAKKO", "VANGD", "VBTYZ", "VERUS", "VESBE",
   "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO", "VSNMD", "YAPRK", "YATAS", "YAYLA", "YEOTK", "YESIL",
   "YGGYO", "YGYO", "YIGIT", "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZERGY", "ZOREN",
-  "ZRGYO", "ZGYO"
+  "ZRGYO", "ZGYO", "NETCD", "AKHAN", "BESTE", "ATATR"
     ]
 
 # --- CANLI LİSTE MOTORU ---
